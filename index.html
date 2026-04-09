@@ -9,150 +9,159 @@
 <script src="https://unpkg.com/bpmn-js@17.11.1/dist/bpmn-navigated-viewer.production.min.js"></script>
 <style>
   :root {
-    --bg: #f7f6f3; --surface: #ffffff; --border: #e2e0db; --border-strong: #c8c5be;
-    --text: #1a1916; --text-muted: #6b6860; --text-faint: #9c9a95;
-    --blue: #1d6fa4; --blue-bg: #e8f2f9; --blue-dark: #185d8a;
-    --green: #1e7e34; --green-bg: #eaf4ec; --green-light: #d4edda;
-    --amber: #7a4f0d; --amber-bg: #fdf3e3;
-    --red: #a0260e; --red-bg: #fdecea;
-    --gray-bg: #f0efec; --gray-text: #5a5855;
-    --radius: 6px; --radius-lg: 10px; --panel-w: 380px;
+    --bg:#f7f6f3;--surface:#fff;--border:#e2e0db;--border-strong:#c8c5be;
+    --text:#1a1916;--text-muted:#6b6860;--text-faint:#9c9a95;
+    --blue:#1d6fa4;--blue-bg:#e8f2f9;--blue-dark:#185d8a;
+    --green:#1e7e34;--green-bg:#eaf4ec;
+    --amber:#7a4f0d;--amber-bg:#fdf3e3;
+    --red:#a0260e;--red-bg:#fdecea;
+    --teal:#0f6e56;--teal-bg:#e1f5ee;
+    --radius:6px;--radius-lg:10px;--panel-w:380px;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; overflow: hidden; font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
-  #shell { display: flex; flex-direction: column; height: 100vh; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+  #shell{display:flex;flex-direction:column;height:100vh}
 
-  /* HEADER */
-  #header {
-    background: var(--surface); border-bottom: 1px solid var(--border);
-    padding: 10px 16px 0; flex-shrink: 0;
+  #header{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px 0;flex-shrink:0}
+  #header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
+  .main-title{font-size:14px;font-weight:500;letter-spacing:-0.01em;color:var(--text);line-height:1.2}
+  .sub-title{font-size:11px;color:var(--text-faint);margin-top:2px}
+  #header-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+  #header-bottom{display:flex;align-items:center;padding-bottom:8px;gap:12px}
+  .status-wrap{display:flex;align-items:center;gap:5px}
+  .status-dot{width:6px;height:6px;border-radius:50%;background:var(--border-strong);flex-shrink:0;transition:background .3s}
+  .status-dot.ok{background:#2e9e4f}.status-dot.loading{background:#d4890a}.status-dot.error{background:#c0392b}
+  .status-txt{font-size:11px;color:var(--text-muted)}
+  .divider-v{width:1px;height:16px;background:var(--border)}
+  .legend{display:flex;gap:10px}
+  .leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)}
+  .leg-icon{width:15px;height:15px;border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700}
+
+  .btn{font-family:inherit;font-size:12px;padding:5px 10px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);transition:background .15s;white-space:nowrap}
+  .btn:hover{background:var(--bg)}
+  .btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .btn.primary:hover{background:var(--blue-dark)}
+
+  #main{display:flex;flex:1;overflow:hidden;position:relative}
+  #canvas{flex:1;overflow:hidden;position:relative}
+  #bpmn-container{width:100%;height:100%}
+
+  #empty-state{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:var(--bg)}
+  #empty-state.hidden{display:none}
+  .empty-icon{width:48px;height:48px;border:2px dashed var(--border-strong);border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center}
+  .empty-icon svg{width:22px;height:22px;stroke:var(--text-faint);fill:none;stroke-width:1.5}
+  .empty-title{font-size:14px;font-weight:500;color:var(--text-muted)}
+  .empty-sub{font-size:12px;color:var(--text-faint);text-align:center;max-width:280px;line-height:1.6}
+
+  #drop-overlay{display:none;position:absolute;inset:0;background:rgba(29,111,164,.07);border:2px dashed var(--blue);z-index:100;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:var(--blue);border-radius:var(--radius-lg)}
+  #drop-overlay.active{display:flex}
+
+  /* SIDE PANEL — layout fijo: head + scroll body + fixed footer */
+  #side-panel{
+    width:0;flex-shrink:0;
+    border-left:1px solid var(--border);background:var(--surface);
+    display:flex;flex-direction:column;
+    transition:width .2s ease;
+    /* NO overflow:hidden acá para no romper el scroll interno */
   }
-  #header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
-  #header-titles { flex: 1; min-width: 0; }
-  .main-title { font-size: 14px; font-weight: 500; letter-spacing: -0.01em; color: var(--text); line-height: 1.2; }
-  .sub-title { font-size: 11px; color: var(--text-faint); margin-top: 2px; letter-spacing: 0.01em; }
-  #header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-  #header-bottom { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; }
-  #header-bottom-left { display: flex; align-items: center; gap: 10px; }
-  .status-wrap { display: flex; align-items: center; gap: 5px; }
-  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border-strong); flex-shrink: 0; transition: background 0.3s; }
-  .status-dot.ok { background: #2e9e4f; } .status-dot.loading { background: #d4890a; } .status-dot.error { background: #c0392b; }
-  .status-txt { font-size: 11px; color: var(--text-muted); }
-  .divider { width: 1px; height: 16px; background: var(--border); }
-  .legend { display: flex; gap: 10px; }
-  .leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); }
-  .leg-icon { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; }
+  #side-panel.open{width:var(--panel-w)}
 
-  .btn { font-family: inherit; font-size: 12px; padding: 5px 10px; border-radius: var(--radius); cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: background 0.15s; white-space: nowrap; }
-  .btn:hover { background: var(--bg); }
-  .btn.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
-  .btn.primary:hover { background: var(--blue-dark); }
-
-  /* MAIN */
-  #main { display: flex; flex: 1; overflow: hidden; position: relative; }
-  #canvas { flex: 1; overflow: hidden; position: relative; }
-  #bpmn-container { width: 100%; height: 100%; }
-
-  #empty-state { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: var(--bg); }
-  #empty-state.hidden { display: none; }
-  .empty-icon { width: 48px; height: 48px; border: 2px dashed var(--border-strong); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; }
-  .empty-icon svg { width: 22px; height: 22px; stroke: var(--text-faint); fill: none; stroke-width: 1.5; }
-  .empty-title { font-size: 14px; font-weight: 500; color: var(--text-muted); }
-  .empty-sub { font-size: 12px; color: var(--text-faint); text-align: center; max-width: 280px; line-height: 1.6; }
-
-  #drop-overlay { display: none; position: absolute; inset: 0; background: rgba(29,111,164,0.07); border: 2px dashed var(--blue); z-index: 100; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; color: var(--blue); border-radius: var(--radius-lg); }
-  #drop-overlay.active { display: flex; }
-
-  /* SIDE PANEL */
-  #side-panel { width: 0; overflow: hidden; flex-shrink: 0; border-left: 1px solid var(--border); background: var(--surface); display: flex; flex-direction: column; transition: width 0.2s ease; }
-  #side-panel.open { width: var(--panel-w); }
-
-  #sp-head { padding: 14px 16px 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-shrink: 0; background: var(--bg); }
-  #sp-head-left { flex: 1; min-width: 0; }
-  #sp-activity-name { font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 5px; }
-  .cu-head-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 3px; }
-  .cu-id-badge { font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 2px 7px; border-radius: 4px; background: var(--blue-bg); color: var(--blue); font-weight: 500; white-space: nowrap; }
-  .cu-titulo-head { font-size: 14px; font-weight: 500; color: var(--text); line-height: 1.3; }
-  .estado-inline { font-size: 10px; padding: 2px 7px; border-radius: 3px; font-weight: 500; }
-  #sp-close { background: none; border: none; cursor: pointer; color: var(--text-faint); font-size: 20px; line-height: 1; padding: 2px; flex-shrink: 0; }
-  #sp-close:hover { color: var(--text); }
-
-  #sp-body { flex: 1; overflow-y: auto; }
-  #sp-footer { padding: 14px 16px; border-top: 1px solid var(--border); flex-shrink: 0; }
-
-  /* PANEL SECTIONS */
-  .sp-section {
-    border-bottom: 1px solid var(--border);
+  #sp-head{
+    padding:14px 16px 12px;border-bottom:1px solid var(--border);
+    display:flex;justify-content:space-between;align-items:flex-start;
+    gap:8px;flex-shrink:0;background:var(--bg);
+    min-width:var(--panel-w);
   }
-  .sp-section-header {
-    display: flex; align-items: center; gap: 8px;
-    padding: 10px 16px 8px;
+  #sp-head-left{flex:1;min-width:0}
+  #sp-activity-name{font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+  .cu-head-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+  .cu-id-badge{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:2px 7px;border-radius:4px;background:var(--blue-bg);color:var(--blue);font-weight:500}
+  .estado-pill{font-size:10px;padding:2px 8px;border-radius:3px;font-weight:500}
+  .cu-titulo-head{font-size:14px;font-weight:500;color:var(--text);line-height:1.3}
+  #sp-close{background:none;border:none;cursor:pointer;color:var(--text-faint);font-size:20px;line-height:1;padding:2px;flex-shrink:0}
+  #sp-close:hover{color:var(--text)}
+
+  /* SCROLL BODY — ocupa todo el espacio disponible */
+  #sp-body{
+    flex:1;
+    overflow-y:auto;
+    overflow-x:hidden;
+    min-width:var(--panel-w);
+    min-height:0; /* crítico para que flex+overflow funcione */
   }
-  .sp-section-icon {
-    width: 20px; height: 20px; border-radius: 4px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11px; flex-shrink: 0;
+
+  /* FOOTER FIJO */
+  #sp-footer{
+    padding:14px 16px;border-top:1px solid var(--border);
+    flex-shrink:0;min-width:var(--panel-w);
   }
-  .sp-section-label { font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
-  .sp-section-body { padding: 0 16px 12px; }
-  .sp-val { font-size: 12px; color: var(--text-muted); line-height: 1.65; }
 
-  /* ACTORES */
-  .actor-row { display: flex; gap: 8px; margin-bottom: 6px; align-items: flex-start; }
-  .actor-row:last-child { margin-bottom: 0; }
-  .actor-lbl { font-size: 10px; color: var(--text-faint); min-width: 60px; padding-top: 1px; text-transform: uppercase; letter-spacing: .04em; flex-shrink: 0; }
-  .actor-val { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+  /* SECCIONES */
+  .sp-sec{border-bottom:1px solid var(--border)}
+  .sp-sec:last-child{border-bottom:none}
+  .sp-sec-head{display:flex;align-items:center;gap:8px;padding:10px 16px 6px}
+  .sp-sec-icon{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+  .sp-sec-lbl{font-size:11px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em}
+  .sp-sec-body{padding:0 16px 12px}
+  .sp-val{font-size:12px;color:var(--text-muted);line-height:1.65}
 
-  /* PRECONDICIONES */
-  .prec-list { list-style: none; padding: 0; }
-  .prec-item { display: flex; gap: 8px; font-size: 12px; color: var(--text-muted); padding: 4px 0; border-bottom: 1px solid var(--border); line-height: 1.5; }
-  .prec-item:last-child { border-bottom: none; }
-  .prec-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border-strong); margin-top: 6px; flex-shrink: 0; }
+  .actor-row{display:flex;gap:8px;margin-bottom:5px;align-items:flex-start}
+  .actor-row:last-child{margin-bottom:0}
+  .actor-lbl{font-size:10px;color:var(--text-faint);min-width:68px;padding-top:1px;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0}
+  .actor-val{font-size:12px;color:var(--text-muted);line-height:1.5}
 
-  /* FLUJO */
-  .flujo-list { list-style: none; padding: 0; }
-  .flujo-item { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); }
-  .flujo-item:last-child { border-bottom: none; }
-  .flujo-n { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-faint); min-width: 20px; padding-top: 2px; flex-shrink: 0; font-weight: 500; }
-  .flujo-txt { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+  .flujo-list{list-style:none;padding:0}
+  .flujo-item{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
+  .flujo-item:last-child{border-bottom:none}
+  .flujo-n{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-faint);min-width:22px;padding-top:2px;flex-shrink:0;font-weight:500}
+  .flujo-txt{font-size:12px;color:var(--text-muted);line-height:1.6}
 
-  /* POST */
-  .post-box { background: var(--green-bg); border-radius: var(--radius); padding: 10px 12px; font-size: 12px; color: #1a4a24; line-height: 1.6; }
+  .prec-list{list-style:none;padding:0}
+  .prec-item{display:flex;gap:8px;font-size:12px;color:var(--text-muted);padding:4px 0;border-bottom:1px solid var(--border);line-height:1.5}
+  .prec-item:last-child{border-bottom:none}
+  .prec-dot{width:5px;height:5px;border-radius:50%;background:var(--border-strong);margin-top:6px;flex-shrink:0}
 
-  .no-cu { padding: 20px 16px; font-size: 12px; color: var(--text-muted); line-height: 1.7; }
-  .no-cu code { font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: var(--gray-bg); padding: 2px 6px; border-radius: 3px; color: var(--text); }
+  .post-box{background:var(--green-bg);border-radius:var(--radius);padding:10px 12px;font-size:12px;color:#1a4a24;line-height:1.6}
 
-  .drive-btn { display: block; width: 100%; padding: 10px 12px; text-align: center; font-family: inherit; font-size: 12px; font-weight: 500; color: var(--blue); background: var(--blue-bg); border: none; border-radius: var(--radius); cursor: pointer; text-decoration: none; margin-bottom: 8px; }
-  .drive-btn:hover { background: #d4e9f5; }
-  .srs-hint { font-size: 10px; color: var(--text-faint); text-align: center; line-height: 1.55; }
+  .no-cu{padding:20px 16px;font-size:12px;color:var(--text-muted);line-height:1.7}
+  .no-cu code{font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--bg);padding:2px 6px;border-radius:3px;color:var(--text)}
 
-  /* CONFIG OVERLAY */
-  #cfg-overlay { display: none; position: absolute; inset: 0; background: var(--surface); z-index: 200; overflow-y: auto; padding: 24px; }
-  #cfg-overlay.open { display: block; }
-  .cfg-h { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
-  .cfg-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.6; }
-  .cfg-section { font-size: 10px; font-weight: 500; color: var(--text-faint); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
-  .cfg-hint { font-size: 11px; color: var(--text-muted); line-height: 1.6; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 16px; }
-  .cfg-hint code { font-family: 'IBM Plex Mono', monospace; font-size: 10px; background: var(--surface); padding: 1px 4px; border-radius: 3px; }
-  .input-row { display: flex; gap: 6px; margin-bottom: 6px; }
-  .input-row input { flex: 1; font-family: inherit; font-size: 12px; padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--text); }
-  .input-row input:focus { outline: none; border-color: var(--blue); }
-  .bpmn-drop { border: 1.5px dashed var(--border-strong); border-radius: var(--radius); padding: 20px; text-align: center; color: var(--text-muted); font-size: 12px; cursor: pointer; margin-bottom: 16px; transition: background 0.15s; }
-  .bpmn-drop:hover, .bpmn-drop.over { background: var(--blue-bg); border-color: var(--blue); }
-  .cfg-actions { display: flex; gap: 8px; }
+  /* FOOTER BUTTONS */
+  .footer-btn{display:block;width:100%;padding:10px 12px;text-align:center;font-family:inherit;font-size:12px;font-weight:500;border:none;border-radius:var(--radius);cursor:pointer;text-decoration:none;margin-bottom:8px}
+  .footer-btn:last-child{margin-bottom:0}
+  .btn-srs{color:var(--blue);background:var(--blue-bg)}
+  .btn-srs:hover{background:#d4e9f5}
+  .btn-proto{color:var(--teal);background:var(--teal-bg)}
+  .btn-proto:hover{background:#c5ede1}
+  .srs-hint{font-size:10px;color:var(--text-faint);text-align:center;line-height:1.55;margin-top:8px}
 
-  #zoom-ctrl { position: absolute; bottom: 16px; left: 16px; display: flex; gap: 4px; z-index: 10; }
-  #zoom-ctrl button { height: 28px; min-width: 28px; padding: 0 6px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-family: inherit; }
-  #zoom-ctrl button:hover { background: var(--bg); }
-  #btn-zoom-fit { font-size: 11px !important; }
-  #progress { position: absolute; top: 0; left: 0; height: 2px; width: 0; background: var(--blue); transition: width 0.3s; z-index: 300; pointer-events: none; }
+  /* CONFIG */
+  #cfg-overlay{display:none;position:absolute;inset:0;background:var(--surface);z-index:200;overflow-y:auto;padding:24px}
+  #cfg-overlay.open{display:block}
+  .cfg-h{font-size:15px;font-weight:500;margin-bottom:4px}
+  .cfg-sub{font-size:12px;color:var(--text-muted);margin-bottom:20px;line-height:1.6}
+  .cfg-sec-lbl{font-size:10px;font-weight:500;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+  .cfg-hint{font-size:11px;color:var(--text-muted);line-height:1.6;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px}
+  .cfg-hint code{font-family:'IBM Plex Mono',monospace;font-size:10px;background:var(--surface);padding:1px 4px;border-radius:3px}
+  .input-row{display:flex;gap:6px;margin-bottom:6px}
+  .input-row input{flex:1;font-family:inherit;font-size:12px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text)}
+  .input-row input:focus{outline:none;border-color:var(--blue)}
+  .bpmn-drop{border:1.5px dashed var(--border-strong);border-radius:var(--radius);padding:20px;text-align:center;color:var(--text-muted);font-size:12px;cursor:pointer;margin-bottom:16px;transition:background .15s}
+  .bpmn-drop:hover,.bpmn-drop.over{background:var(--blue-bg);border-color:var(--blue)}
+  .cfg-actions{display:flex;gap:8px}
+
+  #zoom-ctrl{position:absolute;bottom:16px;left:16px;display:flex;gap:4px;z-index:10}
+  #zoom-ctrl button{height:28px;min-width:28px;padding:0 6px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-family:inherit}
+  #zoom-ctrl button:hover{background:var(--bg)}
+  #btn-zoom-fit{font-size:11px!important}
+  #progress{position:absolute;top:0;left:0;height:2px;width:0;background:var(--blue);transition:width .3s;z-index:300;pointer-events:none}
 </style>
 </head>
 <body>
 <div id="shell">
   <div id="header">
     <div id="header-top">
-      <div id="header-titles">
+      <div>
         <p class="main-title">Proceso de Expediente de Mensura</p>
         <p class="sub-title">Casos de uso sobre el proceso To Be</p>
       </div>
@@ -167,25 +176,11 @@
       </div>
     </div>
     <div id="header-bottom">
-      <div id="header-bottom-left">
-        <div class="legend">
-          <div class="leg">
-            <div class="leg-icon" style="background:#eaf4ec;border:1px solid #2e9e4f;color:#1e7e34">✓</div>
-            Aprobado
-          </div>
-          <div class="leg">
-            <div class="leg-icon" style="background:#fdf3e3;border:1px solid #d4890a;color:#7a4f0d">!</div>
-            En revisión
-          </div>
-          <div class="leg">
-            <div class="leg-icon" style="background:#fdecea;border:1px solid #c0392b;color:#a0260e">✕</div>
-            Obsoleto
-          </div>
-          <div class="leg">
-            <div class="leg-icon" style="background:#fff;border:1px solid #c8c5be"></div>
-            Sin CU
-          </div>
-        </div>
+      <div class="legend">
+        <div class="leg"><div class="leg-icon" style="background:#eaf4ec;border:1px solid #2e9e4f;color:#1e7e34">✓</div>Aprobado</div>
+        <div class="leg"><div class="leg-icon" style="background:#fdf3e3;border:1px solid #d4890a;color:#7a4f0d">!</div>En revisión</div>
+        <div class="leg"><div class="leg-icon" style="background:#fdecea;border:1px solid #c0392b;color:#a0260e">✕</div>Obsoleto</div>
+        <div class="leg"><div class="leg-icon" style="background:#fff;border:1px solid #c8c5be"></div>Sin CU</div>
       </div>
     </div>
   </div>
@@ -209,16 +204,16 @@
       <div id="cfg-overlay">
         <p class="cfg-h">Configuración</p>
         <p class="cfg-sub">Conectá tu Google Sheet y actualizá el BPMN cuando haya cambios. Los datos del Sheet se recargan con ↺ sin tocar código.</p>
-        <p class="cfg-section">Google Sheet — URL de exportación CSV</p>
+        <p class="cfg-sec-lbl">Google Sheet — URL de exportación CSV</p>
         <div class="input-row">
           <input id="sheet-url" type="url" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv">
           <button class="btn" id="btn-test">Probar</button>
         </div>
         <div class="cfg-hint">
           En tu Sheet: <strong>Archivo → Compartir → Publicar en la web</strong> → elegí la hoja → formato CSV → copiá el link.<br><br>
-          Columnas requeridas: <code>activity_id</code> · <code>cu_id</code> · <code>cu_titulo</code> · <code>actor_principal</code> · <code>actores_secundarios</code> · <code>precondicion</code> · <code>postcondicion_exito</code> · <code>flujo_principal</code> (pasos separados por <code>|</code>) · <code>estado</code> · <code>drive_link</code>
+          Columnas requeridas: <code>activity_id</code> · <code>cu_id</code> · <code>cu_titulo</code> · <code>actor_principal</code> · <code>actores_secundarios</code> · <code>precondicion</code> · <code>postcondicion_exito</code> · <code>flujo_principal</code> (pasos separados por <code>|</code>) · <code>estado</code> · <code>drive_link</code> · <code>prototipo_link</code>
         </div>
-        <p class="cfg-section">Actualizar archivo BPMN</p>
+        <p class="cfg-sec-lbl">Actualizar archivo BPMN</p>
         <div class="bpmn-drop" id="cfg-drop">Soltá tu .bpmn o .xml acá, o hacé click para elegirlo</div>
         <input type="file" id="cfg-file" accept=".bpmn,.xml" style="display:none">
         <div class="cfg-actions">
@@ -246,234 +241,237 @@
 
 <script>
 const BPMN_AUTO_URL = 'proceso.xml';
-
 const ESTADO_CFG = {
-  'Aprobado':    { bg: '#eaf4ec', color: '#1e7e34', border: '#2e9e4f', icon: '✓', ovBg: '#2e9e4f' },
-  'En revisión': { bg: '#fdf3e3', color: '#7a4f0d', border: '#d4890a', icon: '!', ovBg: '#d4890a' },
-  'Obsoleto':    { bg: '#fdecea', color: '#a0260e', border: '#c0392b', icon: '✕', ovBg: '#c0392b' },
-  'Borrador':    { bg: '#f0efec', color: '#5a5855', border: '#c8c5be', icon: '·', ovBg: '#9c9a95' },
-  'Pendiente':   { bg: '#f0efec', color: '#5a5855', border: '#c8c5be', icon: '·', ovBg: '#9c9a95' },
+  'Aprobado':    {bg:'#eaf4ec',color:'#1e7e34',border:'#2e9e4f',icon:'✓',ovBg:'#2e9e4f'},
+  'En revisión': {bg:'#fdf3e3',color:'#7a4f0d',border:'#d4890a',icon:'!',ovBg:'#d4890a'},
+  'Obsoleto':    {bg:'#fdecea',color:'#a0260e',border:'#c0392b',icon:'✕',ovBg:'#c0392b'},
+  'Borrador':    {bg:'#f0efec',color:'#5a5855',border:'#c8c5be',icon:'·',ovBg:'#9c9a95'},
+  'Pendiente':   {bg:'#f0efec',color:'#5a5855',border:'#c8c5be',icon:'·',ovBg:'#9c9a95'},
+};
+const ICONS = {
+  actores: {icon:'👤',bg:'#e8f2f9',color:'#1d6fa4'},
+  flujo:   {icon:'→', bg:'#eaf4ec',color:'#1e7e34'},
+  prec:    {icon:'○', bg:'#fdf3e3',color:'#7a4f0d'},
+  post:    {icon:'✓', bg:'#eaf4ec',color:'#1e7e34'},
+  estado:  {icon:'◉', bg:'#f0efec',color:'#5a5855'},
 };
 
-const SECTION_ICONS = {
-  actores:    { icon: '👤', bg: '#e8f2f9', color: '#1d6fa4' },
-  prec:       { icon: '○',  bg: '#fdf3e3', color: '#7a4f0d' },
-  flujo:      { icon: '→',  bg: '#eaf4ec', color: '#1e7e34' },
-  post:       { icon: '✓',  bg: '#eaf4ec', color: '#1e7e34' },
-};
+let cuMap={}, sheetUrl='', viewer=null, overlayIds={};
 
-let cuMap = {}, sheetUrl = '', viewer = null, overlayIds = {};
-
-function save() { try { localStorage.setItem('bpmn_cu_v3', JSON.stringify({ sheetUrl })); } catch(e) {} }
-function loadStorage() {
-  try {
-    const d = JSON.parse(localStorage.getItem('bpmn_cu_v3') || '{}');
-    if (d.sheetUrl) { sheetUrl = d.sheetUrl; document.getElementById('sheet-url').value = sheetUrl; }
-  } catch(e) {}
+function save(){try{localStorage.setItem('bpmn_cu_v3',JSON.stringify({sheetUrl}))}catch(e){}}
+function loadStorage(){
+  try{
+    const d=JSON.parse(localStorage.getItem('bpmn_cu_v3')||'{}');
+    if(d.sheetUrl){sheetUrl=d.sheetUrl;document.getElementById('sheet-url').value=sheetUrl}
+  }catch(e){}
 }
-function setStatus(s, txt) {
-  document.getElementById('sdot').className = 'status-dot' + (s ? ' '+s : '');
-  document.getElementById('stxt').textContent = txt;
+function setStatus(s,txt){
+  document.getElementById('sdot').className='status-dot'+(s?' '+s:'');
+  document.getElementById('stxt').textContent=txt;
 }
-function setProgress(pct) {
-  const b = document.getElementById('progress');
-  b.style.width = pct + '%';
-  if (pct >= 100) setTimeout(() => b.style.width = '0', 600);
+function setProgress(pct){
+  const b=document.getElementById('progress');
+  b.style.width=pct+'%';
+  if(pct>=100)setTimeout(()=>b.style.width='0',600);
 }
-function splitLine(line) {
-  const r = []; let cur = '', inQ = false;
-  for (const c of line) {
-    if (c === '"') { inQ = !inQ; }
-    else if (c === ',' && !inQ) { r.push(cur); cur = ''; }
-    else cur += c;
+function splitLine(line){
+  const r=[];let cur='',inQ=false;
+  for(const c of line){
+    if(c==='"'){inQ=!inQ}
+    else if(c===','&&!inQ){r.push(cur);cur=''}
+    else cur+=c;
   }
   r.push(cur);
-  return r.map(v => v.replace(/^"|"$/g, '').trim());
+  return r.map(v=>v.replace(/^"|"$/g,'').trim());
 }
-function parseCSV(text) {
-  const lines = text.trim().split('\n');
-  const headers = splitLine(lines[0]);
-  return lines.slice(1).map(l => {
-    const vals = splitLine(l), obj = {};
-    headers.forEach((h, i) => obj[h.trim()] = (vals[i] || '').trim());
+function parseCSV(text){
+  const lines=text.trim().split('\n');
+  const headers=splitLine(lines[0]);
+  return lines.slice(1).map(l=>{
+    const vals=splitLine(l),obj={};
+    headers.forEach((h,i)=>obj[h.trim()]=(vals[i]||'').trim());
     return obj;
-  }).filter(r => r.activity_id);
+  }).filter(r=>r.activity_id);
 }
-function csvToMap(rows) {
-  const map = {};
-  rows.forEach(r => {
-    map[r.activity_id] = {
-      cu_id: r.cu_id||'', cu_titulo: r.cu_titulo||'Sin título',
-      actor_principal: r.actor_principal||'', actores_secundarios: r.actores_secundarios||'',
-      precondicion: r.precondicion||'', postcondicion_exito: r.postcondicion_exito||'',
-      flujo_principal: r.flujo_principal||'', estado: r.estado||'Pendiente', drive_link: r.drive_link||''
+function csvToMap(rows){
+  const map={};
+  rows.forEach(r=>{
+    map[r.activity_id]={
+      cu_id:r.cu_id||'',cu_titulo:r.cu_titulo||'Sin título',
+      actor_principal:r.actor_principal||'',actores_secundarios:r.actores_secundarios||'',
+      precondicion:r.precondicion||'',postcondicion_exito:r.postcondicion_exito||'',
+      flujo_principal:r.flujo_principal||'',estado:r.estado||'Pendiente',
+      drive_link:r.drive_link||'',prototipo_link:r.prototipo_link||''
     };
   });
   return map;
 }
-async function reloadSheet() {
-  if (!sheetUrl) { setStatus('', 'Sin conectar'); return; }
-  setStatus('loading', 'Cargando...'); setProgress(30);
-  try {
-    const res = await fetch(sheetUrl + '&t=' + Date.now());
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    cuMap = csvToMap(parseCSV(await res.text()));
+async function reloadSheet(){
+  if(!sheetUrl){setStatus('','Sin conectar');return}
+  setStatus('loading','Cargando...');setProgress(30);
+  try{
+    const res=await fetch(sheetUrl+'&t='+Date.now());
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    cuMap=csvToMap(parseCSV(await res.text()));
     setProgress(100);
-    setStatus('ok', 'Sheets · ' + Object.keys(cuMap).length + ' CUs');
+    setStatus('ok','Sheets · '+Object.keys(cuMap).length+' CUs');
     applyOverlays();
-  } catch(e) { setProgress(0); setStatus('error', 'Error'); alert('No se pudo leer el Sheet.\n' + e.message); }
+  }catch(e){setProgress(0);setStatus('error','Error');alert('No se pudo leer el Sheet.\n'+e.message)}
 }
-async function testSheet() {
-  const url = document.getElementById('sheet-url').value.trim();
-  if (!url) { alert('Ingresá la URL primero.'); return; }
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const rows = parseCSV(await res.text());
-    alert('Conexión exitosa.\n' + rows.length + ' filas.\nColumnas: ' + Object.keys(rows[0]||{}).join(', '));
-  } catch(e) { alert('Error:\n' + e.message); }
+async function testSheet(){
+  const url=document.getElementById('sheet-url').value.trim();
+  if(!url){alert('Ingresá la URL primero.');return}
+  try{
+    const res=await fetch(url);
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const rows=parseCSV(await res.text());
+    alert('Conexión exitosa.\n'+rows.length+' filas.\nColumnas: '+Object.keys(rows[0]||{}).join(', '));
+  }catch(e){alert('Error:\n'+e.message)}
 }
-function initViewer() {
-  if (viewer) viewer.destroy();
-  viewer = new BpmnJS({ container: '#bpmn-container', height: '100%' });
-  viewer.on('element.click', e => {
-    const el = e.element;
-    if (el.type && (el.type.includes('Task') || el.type.includes('Activity') || el.type.includes('CallActivity') || el.type.includes('SubProcess')))
+function initViewer(){
+  if(viewer)viewer.destroy();
+  viewer=new BpmnJS({container:'#bpmn-container',height:'100%'});
+  viewer.on('element.click',e=>{
+    const el=e.element;
+    if(el.type&&(el.type.includes('Task')||el.type.includes('Activity')||el.type.includes('CallActivity')||el.type.includes('SubProcess')))
       handleElementClick(el);
   });
 }
-async function loadBpmnXml(xml) {
+async function loadBpmnXml(xml){
   document.getElementById('empty-state').classList.add('hidden');
-  if (!viewer) initViewer();
-  try {
+  if(!viewer)initViewer();
+  try{
     await viewer.importXML(xml);
-    viewer.get('canvas').zoom('fit-viewport', 'auto');
+    viewer.get('canvas').zoom('fit-viewport','auto');
     applyOverlays();
-  } catch(e) {
+  }catch(e){
     document.getElementById('empty-state').classList.remove('hidden');
-    document.getElementById('empty-title').textContent = 'Error al cargar el BPMN';
-    document.getElementById('empty-sub').textContent = e.message;
+    document.getElementById('empty-title').textContent='Error al cargar el BPMN';
+    document.getElementById('empty-sub').textContent=e.message;
   }
 }
-async function autoLoadBpmn() {
-  try {
-    const res = await fetch(BPMN_AUTO_URL + '?t=' + Date.now());
-    if (!res.ok) throw new Error();
+async function autoLoadBpmn(){
+  try{
+    const res=await fetch(BPMN_AUTO_URL+'?t='+Date.now());
+    if(!res.ok)throw new Error();
     await loadBpmnXml(await res.text());
-  } catch(e) {
-    document.getElementById('empty-title').textContent = 'Cargá tu BPMN para comenzar';
-    document.getElementById('empty-sub').textContent = 'Usá el botón "Cargar BPMN" o arrastrá tu archivo .bpmn / .xml acá.';
+  }catch(e){
+    document.getElementById('empty-title').textContent='Cargá tu BPMN para comenzar';
+    document.getElementById('empty-sub').textContent='Usá el botón "Cargar BPMN" o arrastrá tu archivo .bpmn / .xml acá.';
   }
 }
-function applyOverlays() {
-  if (!viewer) return;
-  const ov = viewer.get('overlays'), er = viewer.get('elementRegistry');
-  Object.keys(overlayIds).forEach(id => { try { ov.remove({ element: id }); } catch(e) {} });
-  overlayIds = {};
-  er.forEach(el => {
-    const isTask = el.type && (el.type.includes('Task') || el.type.includes('Activity') || el.type.includes('CallActivity') || el.type.includes('SubProcess'));
-    if (!isTask) return;
-    const cu = cuMap[el.id];
-    if (!cu) return;
-    const est = ESTADO_CFG[cu.estado] || ESTADO_CFG['Pendiente'];
-    const html = `<div style="
-      width:16px;height:16px;border-radius:50%;
-      background:${est.ovBg};border:2px solid #fff;
-      display:flex;align-items:center;justify-content:center;
-      font-size:9px;font-weight:700;color:#fff;
-      font-family:'IBM Plex Sans',sans-serif;
-      box-shadow:0 1px 3px rgba(0,0,0,0.2)
-    ">${est.icon}</div>`;
-    try { overlayIds[el.id] = ov.add(el.id, { position: { top: -8, right: -8 }, html }); } catch(e) {}
+function applyOverlays(){
+  if(!viewer)return;
+  const ov=viewer.get('overlays'),er=viewer.get('elementRegistry');
+  Object.keys(overlayIds).forEach(id=>{try{ov.remove({element:id})}catch(e){}});
+  overlayIds={};
+  er.forEach(el=>{
+    const isTask=el.type&&(el.type.includes('Task')||el.type.includes('Activity')||el.type.includes('CallActivity')||el.type.includes('SubProcess'));
+    if(!isTask)return;
+    const cu=cuMap[el.id];
+    if(!cu)return;
+    const est=ESTADO_CFG[cu.estado]||ESTADO_CFG['Pendiente'];
+    const html=`<div style="width:16px;height:16px;border-radius:50%;background:${est.ovBg};border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;font-family:'IBM Plex Sans',sans-serif;box-shadow:0 1px 3px rgba(0,0,0,.2)">${est.icon}</div>`;
+    try{overlayIds[el.id]=ov.add(el.id,{position:{top:-8,right:-8},html})}catch(e){}
   });
 }
-function makeSection(iconCfg, label, bodyHTML) {
-  return `<div class="sp-section">
-    <div class="sp-section-header">
-      <div class="sp-section-icon" style="background:${iconCfg.bg};color:${iconCfg.color}">${iconCfg.icon}</div>
-      <span class="sp-section-label">${label}</span>
+function sec(icfg,label,body){
+  return `<div class="sp-sec">
+    <div class="sp-sec-head">
+      <div class="sp-sec-icon" style="background:${icfg.bg};color:${icfg.color}">${icfg.icon}</div>
+      <span class="sp-sec-lbl">${label}</span>
     </div>
-    <div class="sp-section-body">${bodyHTML}</div>
+    <div class="sp-sec-body">${body}</div>
   </div>`;
 }
-function handleElementClick(el) {
-  const cu = cuMap[el.id];
-  const name = el.businessObject && el.businessObject.name ? el.businessObject.name : el.id;
-  document.getElementById('sp-activity-name').textContent = name;
+function handleElementClick(el){
+  const cu=cuMap[el.id];
+  const name=el.businessObject&&el.businessObject.name?el.businessObject.name:el.id;
+  document.getElementById('sp-activity-name').textContent=name;
 
-  if (cu) {
-    const est = ESTADO_CFG[cu.estado] || ESTADO_CFG['Pendiente'];
-    document.getElementById('sp-cu-head').innerHTML = `
+  if(cu){
+    const est=ESTADO_CFG[cu.estado]||ESTADO_CFG['Pendiente'];
+    document.getElementById('sp-cu-head').innerHTML=`
       <div class="cu-head-row">
         <span class="cu-id-badge">${cu.cu_id}</span>
-        <span class="estado-inline" style="background:${est.bg};color:${est.color};border:1px solid ${est.border}">${cu.estado}</span>
+        <span class="estado-pill" style="background:${est.bg};color:${est.color};border:1px solid ${est.border}">${cu.estado}</span>
       </div>
       <p class="cu-titulo-head">${cu.cu_titulo}</p>`;
 
-    let html = '';
+    let html='';
 
-    const actoresHTML = `
-      <div class="actor-row"><span class="actor-lbl">Principal</span><span class="actor-val">${cu.actor_principal}</span></div>
-      ${cu.actores_secundarios ? `<div class="actor-row"><span class="actor-lbl">Secundarios</span><span class="actor-val">${cu.actores_secundarios}</span></div>` : ''}`;
-    html += makeSection(SECTION_ICONS.actores, 'Actores', actoresHTML);
+    // ACTORES
+    let actHTML=`<div class="actor-row"><span class="actor-lbl">Principal</span><span class="actor-val">${cu.actor_principal||'—'}</span></div>`;
+    if(cu.actores_secundarios) actHTML+=`<div class="actor-row"><span class="actor-lbl">Secundarios</span><span class="actor-val">${cu.actores_secundarios}</span></div>`;
+    html+=sec(ICONS.actores,'Actores',actHTML);
 
-    if (cu.precondicion) {
-      const precs = cu.precondicion.split('.').map(s => s.trim()).filter(Boolean);
-      const precHTML = `<ul class="prec-list">${precs.map(p => `<li class="prec-item"><span class="prec-dot"></span><span>${p}.</span></li>`).join('')}</ul>`;
-      html += makeSection(SECTION_ICONS.prec, 'Precondiciones', precHTML);
+    // FLUJO PRINCIPAL — primero y más visible
+    if(cu.flujo_principal){
+      const pasos=cu.flujo_principal.split('|').filter(Boolean);
+      const items=pasos.map((p,i)=>`<li class="flujo-item"><span class="flujo-n">${String(i+1).padStart(2,'0')}</span><span class="flujo-txt">${p.trim()}</span></li>`).join('');
+      html+=sec(ICONS.flujo,'Flujo principal',`<ul class="flujo-list">${items}</ul>`);
     }
 
-    if (cu.flujo_principal) {
-      const pasos = cu.flujo_principal.split('|').filter(Boolean);
-      const flujoHTML = `<ul class="flujo-list">${pasos.map((p,i) => `<li class="flujo-item"><span class="flujo-n">${String(i+1).padStart(2,'0')}</span><span class="flujo-txt">${p.trim()}</span></li>`).join('')}</ul>`;
-      html += makeSection(SECTION_ICONS.flujo, 'Flujo principal', flujoHTML);
+    // PRECONDICIONES
+    if(cu.precondicion){
+      const precs=cu.precondicion.split('.').map(s=>s.trim()).filter(Boolean);
+      const items=precs.map(p=>`<li class="prec-item"><span class="prec-dot"></span><span>${p}.</span></li>`).join('');
+      html+=sec(ICONS.prec,'Precondiciones',`<ul class="prec-list">${items}</ul>`);
     }
 
-    if (cu.postcondicion_exito) {
-      html += makeSection(SECTION_ICONS.post, 'Postcondición (éxito)', `<div class="post-box">${cu.postcondicion_exito}</div>`);
+    // POSTCONDICIÓN
+    if(cu.postcondicion_exito){
+      html+=sec(ICONS.post,'Postcondición (éxito)',`<div class="post-box">${cu.postcondicion_exito}</div>`);
     }
 
-    document.getElementById('sp-body').innerHTML = html;
+    document.getElementById('sp-body').innerHTML=html;
 
-    const footer = document.getElementById('sp-footer');
-    footer.style.display = 'block';
-    footer.innerHTML = cu.drive_link
-      ? `<a class="drive-btn" href="${cu.drive_link}" target="_blank">Ver CU completo en el SRS →</a>
-         <p class="srs-hint">Flujos alternativos, validaciones, mensajes de error y tablas en el documento SRS</p>`
-      : `<p class="srs-hint" style="text-align:center">Sin link al SRS configurado</p>`;
-  } else {
-    document.getElementById('sp-cu-head').innerHTML = `<p class="cu-titulo-head" style="color:var(--text-muted)">Sin CU asignado</p>`;
-    document.getElementById('sp-body').innerHTML = `<div class="no-cu">Esta actividad no tiene un caso de uso asignado todavía.<br><br>Agregá una fila en el Google Sheet con:<br><code>activity_id = ${el.id}</code></div>`;
-    document.getElementById('sp-footer').style.display = 'none';
+    // FOOTER
+    const footer=document.getElementById('sp-footer');
+    footer.style.display='block';
+    let footerHTML='';
+    if(cu.drive_link){
+      footerHTML+=`<a class="footer-btn btn-srs" href="${cu.drive_link}" target="_blank">Ver CU completo en el SRS →</a>`;
+    }
+    if(cu.prototipo_link){
+      footerHTML+=`<a class="footer-btn btn-proto" href="${cu.prototipo_link}" target="_blank">Ver prototipo funcional →</a>`;
+    }
+    footerHTML+=`<p class="srs-hint">Flujos alternativos, validaciones, mensajes de error y tablas en el documento SRS</p>`;
+    footer.innerHTML=footerHTML;
+
+  }else{
+    document.getElementById('sp-cu-head').innerHTML=`<p class="cu-titulo-head" style="color:var(--text-muted)">Sin CU asignado</p>`;
+    document.getElementById('sp-body').innerHTML=`<div class="no-cu">Esta actividad no tiene un caso de uso asignado todavía.<br><br>Agregá una fila en el Google Sheet con:<br><code>activity_id = ${el.id}</code></div>`;
+    document.getElementById('sp-footer').style.display='none';
   }
   document.getElementById('side-panel').classList.add('open');
 }
-function readFile(file) { const r = new FileReader(); r.onload = ev => loadBpmnXml(ev.target.result); r.readAsText(file); }
+function readFile(file){const r=new FileReader();r.onload=ev=>loadBpmnXml(ev.target.result);r.readAsText(file)}
 
-const canvasEl = document.getElementById('canvas'), dropOv = document.getElementById('drop-overlay');
-canvasEl.addEventListener('dragover', e => { e.preventDefault(); dropOv.classList.add('active'); });
-canvasEl.addEventListener('dragleave', e => { if (!canvasEl.contains(e.relatedTarget)) dropOv.classList.remove('active'); });
-canvasEl.addEventListener('drop', e => { e.preventDefault(); dropOv.classList.remove('active'); if (e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]); });
+const canvasEl=document.getElementById('canvas'),dropOv=document.getElementById('drop-overlay');
+canvasEl.addEventListener('dragover',e=>{e.preventDefault();dropOv.classList.add('active')});
+canvasEl.addEventListener('dragleave',e=>{if(!canvasEl.contains(e.relatedTarget))dropOv.classList.remove('active')});
+canvasEl.addEventListener('drop',e=>{e.preventDefault();dropOv.classList.remove('active');if(e.dataTransfer.files[0])readFile(e.dataTransfer.files[0])});
 
-document.getElementById('btn-bpmn').addEventListener('click', () => document.getElementById('bpmn-file-input').click());
-document.getElementById('bpmn-file-input').addEventListener('change', e => { if (e.target.files[0]) readFile(e.target.files[0]); });
-document.getElementById('btn-reload').addEventListener('click', reloadSheet);
-document.getElementById('sp-close').addEventListener('click', () => document.getElementById('side-panel').classList.remove('open'));
-document.getElementById('btn-zoom-in').addEventListener('click', () => viewer && viewer.get('canvas').zoom(viewer.get('canvas').zoom() * 1.2));
-document.getElementById('btn-zoom-out').addEventListener('click', () => viewer && viewer.get('canvas').zoom(viewer.get('canvas').zoom() * 0.8));
-document.getElementById('btn-zoom-fit').addEventListener('click', () => viewer && viewer.get('canvas').zoom('fit-viewport', 'auto'));
-document.getElementById('btn-cfg').addEventListener('click', () => { document.getElementById('sheet-url').value = sheetUrl; document.getElementById('cfg-overlay').classList.add('open'); });
-document.getElementById('btn-save-cfg').addEventListener('click', () => { sheetUrl = document.getElementById('sheet-url').value.trim(); save(); document.getElementById('cfg-overlay').classList.remove('open'); if (sheetUrl) reloadSheet(); });
-document.getElementById('btn-cancel-cfg').addEventListener('click', () => document.getElementById('cfg-overlay').classList.remove('open'));
-document.getElementById('btn-test').addEventListener('click', testSheet);
-const cfgDrop = document.getElementById('cfg-drop');
-cfgDrop.addEventListener('click', () => document.getElementById('cfg-file').click());
-document.getElementById('cfg-file').addEventListener('change', e => { const f = e.target.files[0]; if (f) { cfgDrop.textContent = f.name+' — cargado'; readFile(f); } });
-cfgDrop.addEventListener('dragover', e => { e.preventDefault(); cfgDrop.classList.add('over'); });
-cfgDrop.addEventListener('dragleave', () => cfgDrop.classList.remove('over'));
-cfgDrop.addEventListener('drop', e => { e.preventDefault(); cfgDrop.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) { cfgDrop.textContent = f.name+' — cargado'; readFile(f); } });
+document.getElementById('btn-bpmn').addEventListener('click',()=>document.getElementById('bpmn-file-input').click());
+document.getElementById('bpmn-file-input').addEventListener('change',e=>{if(e.target.files[0])readFile(e.target.files[0])});
+document.getElementById('btn-reload').addEventListener('click',reloadSheet);
+document.getElementById('sp-close').addEventListener('click',()=>document.getElementById('side-panel').classList.remove('open'));
+document.getElementById('btn-zoom-in').addEventListener('click',()=>viewer&&viewer.get('canvas').zoom(viewer.get('canvas').zoom()*1.2));
+document.getElementById('btn-zoom-out').addEventListener('click',()=>viewer&&viewer.get('canvas').zoom(viewer.get('canvas').zoom()*0.8));
+document.getElementById('btn-zoom-fit').addEventListener('click',()=>viewer&&viewer.get('canvas').zoom('fit-viewport','auto'));
+document.getElementById('btn-cfg').addEventListener('click',()=>{document.getElementById('sheet-url').value=sheetUrl;document.getElementById('cfg-overlay').classList.add('open')});
+document.getElementById('btn-save-cfg').addEventListener('click',()=>{sheetUrl=document.getElementById('sheet-url').value.trim();save();document.getElementById('cfg-overlay').classList.remove('open');if(sheetUrl)reloadSheet()});
+document.getElementById('btn-cancel-cfg').addEventListener('click',()=>document.getElementById('cfg-overlay').classList.remove('open'));
+document.getElementById('btn-test').addEventListener('click',testSheet);
+const cfgDrop=document.getElementById('cfg-drop');
+cfgDrop.addEventListener('click',()=>document.getElementById('cfg-file').click());
+document.getElementById('cfg-file').addEventListener('change',e=>{const f=e.target.files[0];if(f){cfgDrop.textContent=f.name+' — cargado';readFile(f)}});
+cfgDrop.addEventListener('dragover',e=>{e.preventDefault();cfgDrop.classList.add('over')});
+cfgDrop.addEventListener('dragleave',()=>cfgDrop.classList.remove('over'));
+cfgDrop.addEventListener('drop',e=>{e.preventDefault();cfgDrop.classList.remove('over');const f=e.dataTransfer.files[0];if(f){cfgDrop.textContent=f.name+' — cargado';readFile(f)}});
 
-loadStorage(); initViewer(); autoLoadBpmn(); if (sheetUrl) reloadSheet();
+loadStorage();initViewer();autoLoadBpmn();if(sheetUrl)reloadSheet();
 </script>
 </body>
 </html>
