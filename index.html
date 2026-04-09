@@ -1,346 +1,517 @@
-
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Navegador BPMN · CU</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/bpmn-js@17.11.1/dist/bpmn-navigated-viewer.production.min.js"></script>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: var(--font-sans); }
-#app { display: flex; height: 600px; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); overflow: hidden; background: var(--color-background-primary); }
-#canvas-area { flex: 1; overflow: auto; position: relative; background: var(--color-background-tertiary); }
-#bpmn-canvas { min-width: 100%; min-height: 100%; }
-#side-panel { width: 0; overflow: hidden; transition: width 0.25s ease; border-left: 0.5px solid var(--color-border-tertiary); background: var(--color-background-primary); display: flex; flex-direction: column; }
-#side-panel.open { width: 300px; }
-#panel-header { padding: 16px; border-bottom: 0.5px solid var(--color-border-tertiary); display: flex; justify-content: space-between; align-items: center; }
-#panel-close { cursor: pointer; color: var(--color-text-secondary); font-size: 18px; background: none; border: none; line-height: 1; }
-#panel-body { padding: 16px; flex: 1; overflow-y: auto; }
-#panel-footer { padding: 16px; border-top: 0.5px solid var(--color-border-tertiary); }
-.cu-badge { display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: var(--border-radius-md); background: var(--color-background-info); color: var(--color-text-info); font-weight: 500; margin-bottom: 8px; }
-.cu-title { font-size: 15px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 8px; }
-.cu-desc { font-size: 13px; color: var(--color-text-secondary); line-height: 1.6; margin-bottom: 12px; }
-.meta-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-.meta-pill { font-size: 11px; padding: 3px 8px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); color: var(--color-text-secondary); }
-.drive-btn { display: block; width: 100%; padding: 9px; text-align: center; background: none; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); color: var(--color-text-info); font-size: 13px; cursor: pointer; text-decoration: none; }
-.drive-btn:hover { background: var(--color-background-secondary); }
-.no-cu { font-size: 13px; color: var(--color-text-secondary); font-style: italic; }
-.toolbar { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; z-index: 10; }
-.tb-btn { font-size: 12px; padding: 5px 10px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-secondary); cursor: pointer; }
-.tb-btn:hover { background: var(--color-background-secondary); }
-.tb-btn.active { background: var(--color-background-info); color: var(--color-text-info); border-color: transparent; }
-#config-overlay { display: none; position: absolute; inset: 0; background: var(--color-background-primary); z-index: 20; overflow-y: auto; padding: 20px; }
-#config-overlay.open { display: block; }
-.cfg-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; color: var(--color-text-primary); }
-.cfg-sub { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 16px; }
-textarea { width: 100%; font-family: var(--font-mono); font-size: 12px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 10px; background: var(--color-background-tertiary); color: var(--color-text-primary); resize: vertical; min-height: 260px; }
-.cfg-actions { display: flex; gap: 8px; margin-top: 12px; }
-.btn-primary { padding: 8px 16px; background: var(--color-background-info); color: var(--color-text-info); border: none; border-radius: var(--border-radius-md); font-size: 13px; cursor: pointer; font-weight: 500; }
-.btn-secondary { padding: 8px 16px; background: none; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); font-size: 13px; color: var(--color-text-secondary); cursor: pointer; }
-.section-label { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
-.upload-area { border: 1.5px dashed var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 20px; text-align: center; color: var(--color-text-secondary); font-size: 13px; cursor: pointer; margin-bottom: 16px; }
-.upload-area:hover { background: var(--color-background-secondary); }
-.panel-activity-label { font-size: 11px; color: var(--color-text-tertiary); margin-bottom: 6px; }
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --border: #e2e0db;
+    --border-strong: #c8c5be;
+    --text: #1a1916;
+    --text-muted: #6b6860;
+    --text-faint: #9c9a95;
+    --blue: #1d6fa4;
+    --blue-bg: #e8f2f9;
+    --green-bg: #eaf4ec;
+    --green-text: #1e6b30;
+    --amber-bg: #fdf3e3;
+    --amber-text: #7a4f0d;
+    --gray-bg: #f0efec;
+    --gray-text: #5a5855;
+    --radius: 6px;
+    --radius-lg: 10px;
+    --panel-w: 300px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); color: var(--text); }
+
+  #shell { display: flex; flex-direction: column; height: 100vh; }
+
+  /* TOPBAR */
+  #topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px; height: 48px; background: var(--surface);
+    border-bottom: 1px solid var(--border); flex-shrink: 0; gap: 12px;
+  }
+  #topbar-left { display: flex; align-items: center; gap: 10px; }
+  #topbar-right { display: flex; align-items: center; gap: 6px; }
+  .app-name { font-size: 13px; font-weight: 500; color: var(--text); letter-spacing: -0.01em; }
+  .divider { width: 1px; height: 18px; background: var(--border); }
+  .status-wrap { display: flex; align-items: center; gap: 5px; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border-strong); flex-shrink: 0; }
+  .status-dot.ok { background: #2e9e4f; }
+  .status-dot.loading { background: #d4890a; }
+  .status-dot.error { background: #c0392b; }
+  .status-txt { font-size: 11px; color: var(--text-muted); }
+  .legend { display: flex; gap: 10px; }
+  .leg { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-muted); }
+  .leg-box { width: 10px; height: 10px; border-radius: 2px; }
+
+  /* BUTTONS */
+  .btn { font-family: inherit; font-size: 12px; padding: 5px 10px; border-radius: var(--radius); cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: background 0.15s; white-space: nowrap; }
+  .btn:hover { background: var(--bg); }
+  .btn.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .btn.primary:hover { background: #185d8a; }
+  .btn.icon { padding: 5px 8px; font-size: 13px; }
+
+  /* MAIN AREA */
+  #main { display: flex; flex: 1; overflow: hidden; position: relative; }
+
+  /* BPMN CANVAS */
+  #canvas { flex: 1; overflow: hidden; position: relative; }
+  #bpmn-container { width: 100%; height: 100%; }
+  .bpmn-container { width: 100%; height: 100%; }
+
+  /* EMPTY STATE */
+  #empty-state {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 12px;
+    background: var(--bg); pointer-events: none;
+  }
+  #empty-state.hidden { display: none; }
+  .empty-icon { width: 48px; height: 48px; border: 2px dashed var(--border-strong); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; }
+  .empty-icon svg { width: 20px; height: 20px; stroke: var(--text-faint); fill: none; stroke-width: 1.5; }
+  .empty-title { font-size: 14px; font-weight: 500; color: var(--text-muted); }
+  .empty-sub { font-size: 12px; color: var(--text-faint); text-align: center; max-width: 260px; line-height: 1.5; }
+
+  /* DROP OVERLAY */
+  #drop-overlay {
+    display: none; position: absolute; inset: 0; background: rgba(29,111,164,0.08);
+    border: 2px dashed var(--blue); border-radius: var(--radius-lg);
+    z-index: 100; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 500; color: var(--blue);
+  }
+  #drop-overlay.active { display: flex; }
+
+  /* SIDE PANEL */
+  #side-panel {
+    width: 0; overflow: hidden; flex-shrink: 0;
+    border-left: 1px solid var(--border); background: var(--surface);
+    display: flex; flex-direction: column;
+    transition: width 0.2s ease;
+  }
+  #side-panel.open { width: var(--panel-w); }
+  #sp-head {
+    padding: 14px 14px 12px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-shrink: 0;
+  }
+  #sp-activity-name { font-size: 10px; color: var(--text-faint); margin-bottom: 3px; text-transform: uppercase; letter-spacing: .06em; }
+  #sp-cu-id { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 3px; background: var(--blue-bg); color: var(--blue); font-weight: 500; font-family: 'IBM Plex Mono', monospace; }
+  #sp-close { background: none; border: none; cursor: pointer; color: var(--text-faint); font-size: 16px; line-height: 1; padding: 2px; flex-shrink: 0; }
+  #sp-close:hover { color: var(--text); }
+  #sp-body { flex: 1; overflow-y: auto; padding: 14px; }
+  #sp-footer { padding: 12px 14px; border-top: 1px solid var(--border); flex-shrink: 0; }
+
+  .sp-section { font-size: 10px; font-weight: 500; color: var(--text-faint); text-transform: uppercase; letter-spacing: .06em; margin: 14px 0 4px; }
+  .sp-section:first-child { margin-top: 0; }
+  .sp-val { font-size: 12px; color: var(--text-muted); line-height: 1.55; }
+  .sp-title { font-size: 14px; font-weight: 500; color: var(--text); line-height: 1.4; }
+  .estado-badge { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 3px; font-weight: 500; }
+  .flujo-ol { list-style: none; padding: 0; }
+  .flujo-ol li { display: flex; gap: 7px; font-size: 12px; color: var(--text-muted); padding: 4px 0; border-bottom: 1px solid var(--border); line-height: 1.45; }
+  .flujo-ol li:last-child { border-bottom: none; }
+  .flujo-n { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-faint); min-width: 14px; padding-top: 1px; }
+  .no-cu { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+  .no-cu code { font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: var(--gray-bg); padding: 1px 4px; border-radius: 3px; color: var(--text); }
+  .drive-btn { display: block; width: 100%; padding: 8px; text-align: center; font-family: inherit; font-size: 12px; font-weight: 500; color: var(--blue); background: var(--blue-bg); border: none; border-radius: var(--radius); cursor: pointer; text-decoration: none; }
+  .drive-btn:hover { background: #d4e9f5; }
+
+  /* CONFIG OVERLAY */
+  #cfg-overlay {
+    display: none; position: absolute; inset: 0; background: var(--surface);
+    z-index: 200; overflow-y: auto; padding: 24px;
+  }
+  #cfg-overlay.open { display: block; }
+  .cfg-h { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+  .cfg-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.55; }
+  .cfg-section { font-size: 10px; font-weight: 500; color: var(--text-faint); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+  .cfg-hint { font-size: 11px; color: var(--text-muted); line-height: 1.55; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 16px; }
+  .cfg-hint code { font-family: 'IBM Plex Mono', monospace; font-size: 10px; background: var(--surface); padding: 1px 4px; border-radius: 3px; }
+  .input-row { display: flex; gap: 6px; margin-bottom: 6px; }
+  .input-row input { flex: 1; font-family: inherit; font-size: 12px; padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--text); }
+  .input-row input:focus { outline: none; border-color: var(--blue); }
+  .bpmn-drop { border: 1.5px dashed var(--border-strong); border-radius: var(--radius); padding: 20px; text-align: center; color: var(--text-muted); font-size: 12px; cursor: pointer; margin-bottom: 16px; transition: background 0.15s; }
+  .bpmn-drop:hover, .bpmn-drop.over { background: var(--blue-bg); border-color: var(--blue); }
+  .cfg-actions { display: flex; gap: 8px; margin-top: 4px; }
+
+  /* ZOOM CONTROLS */
+  #zoom-ctrl { position: absolute; bottom: 16px; left: 16px; display: flex; gap: 4px; z-index: 10; }
+  #zoom-ctrl button { width: 28px; height: 28px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
+  #zoom-ctrl button:hover { background: var(--bg); }
+
+  /* PROGRESS */
+  #progress { position: absolute; top: 0; left: 0; height: 2px; width: 0; background: var(--blue); transition: width 0.3s; z-index: 300; pointer-events: none; }
+
+  /* bpmn-js overlay para highlight */
+  .bpmn-highlight .djs-visual > :nth-child(1) {
+    stroke: #1d6fa4 !important;
+    stroke-width: 2.5px !important;
+    fill: #e8f2f9 !important;
+  }
 </style>
-
-<h2 class="sr-only">Navegador de casos de uso BPMN — clickeá una actividad para ver el CU asociado</h2>
-
-<div id="app">
-  <div id="canvas-area">
-    <div class="toolbar">
-      <button class="tb-btn" id="btn-upload-bpmn">Cargar BPMN</button>
-      <button class="tb-btn" id="btn-config">Configurar CUs</button>
-    </div>
-    <svg id="bpmn-canvas" viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg"></svg>
-    <div id="config-overlay">
-      <p class="cfg-title">Configurar casos de uso</p>
-      <p class="cfg-sub">Editá el JSON para mapear actividades a CUs. Al cargar un BPMN real, el ID viene del atributo <code>id</code> del elemento XML.</p>
-      <p class="section-label" style="margin-bottom:6px;">Cargar XML del BPMN</p>
-      <div class="upload-area" id="drop-zone">Soltá tu archivo .bpmn o .xml acá, o hacé click para elegirlo</div>
-      <input type="file" id="file-input" accept=".bpmn,.xml" style="display:none">
-      <p class="section-label">Mapeo actividades → CUs</p>
-      <textarea id="cu-json"></textarea>
-      <div class="cfg-actions">
-        <button class="btn-primary" id="btn-save-cfg">Guardar</button>
-        <button class="btn-secondary" id="btn-close-cfg">Cancelar</button>
+</head>
+<body>
+<div id="shell">
+  <div id="topbar">
+    <div id="topbar-left">
+      <span class="app-name">Navegador BPMN · CU</span>
+      <div class="divider"></div>
+      <div class="legend">
+        <div class="leg"><div class="leg-box" style="background:#e8f2f9;border:1.5px solid #1d6fa4"></div>Con CU</div>
+        <div class="leg"><div class="leg-box" style="background:#fff;border:1px solid #c8c5be"></div>Pendiente</div>
       </div>
     </div>
+    <div id="topbar-right">
+      <div class="status-wrap">
+        <div class="status-dot" id="sdot"></div>
+        <span class="status-txt" id="stxt">Sin conectar</span>
+      </div>
+      <button class="btn icon" id="btn-reload" title="Recargar desde Google Sheets">↺</button>
+      <button class="btn" id="btn-bpmn">Cargar BPMN</button>
+      <button class="btn primary" id="btn-cfg">Configurar</button>
+    </div>
   </div>
-  <div id="side-panel">
-    <div id="panel-header">
-      <span style="font-size:13px; font-weight:500; color:var(--color-text-secondary);" id="panel-activity-name"></span>
-      <button id="panel-close">×</button>
+
+  <div id="main">
+    <div id="canvas">
+      <div id="bpmn-container"></div>
+      <div id="empty-state">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        </div>
+        <p class="empty-title">Cargá tu BPMN para comenzar</p>
+        <p class="empty-sub">Hacé click en "Cargar BPMN" o arrastrá tu archivo .bpmn / .xml acá</p>
+      </div>
+      <div id="drop-overlay">Soltá el archivo BPMN acá</div>
+      <div id="zoom-ctrl">
+        <button id="btn-zoom-in" title="Acercar">+</button>
+        <button id="btn-zoom-out" title="Alejar">−</button>
+        <button id="btn-zoom-fit" title="Ajustar al canvas" style="font-size:11px;width:auto;padding:0 8px;">fit</button>
+      </div>
+      <div id="progress"></div>
+
+      <!-- CONFIG OVERLAY -->
+      <div id="cfg-overlay">
+        <p class="cfg-h">Configuración</p>
+        <p class="cfg-sub">Conectá tu Google Sheet como fuente de datos y cargá el BPMN. Los cambios en el Sheet se reflejan con el botón ↺ sin tocar código.</p>
+
+        <p class="cfg-section">Google Sheet — URL de exportación CSV</p>
+        <div class="input-row">
+          <input id="sheet-url" type="url" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv">
+          <button class="btn" id="btn-test">Probar</button>
+        </div>
+        <div class="cfg-hint">
+          En tu Sheet: <strong>Archivo → Compartir → Publicar en la web</strong> → elegí la hoja → formato CSV → copiá el link.<br><br>
+          Columnas requeridas: <code>activity_id</code> · <code>cu_id</code> · <code>cu_titulo</code> · <code>actores</code> · <code>precondicion</code> · <code>flujo_resumido</code> (pasos separados por <code>|</code>) · <code>estado</code> · <code>drive_link</code><br><br>
+          El <code>activity_id</code> debe coincidir con el atributo <code>id</code> de cada tarea en el XML del BPMN.
+        </div>
+
+        <p class="cfg-section">Cargar archivo BPMN</p>
+        <div class="bpmn-drop" id="cfg-drop">Soltá tu archivo .bpmn o .xml acá, o hacé click para elegirlo</div>
+        <input type="file" id="cfg-file" accept=".bpmn,.xml" style="display:none">
+
+        <div class="cfg-actions">
+          <button class="btn primary" id="btn-save-cfg">Guardar y cerrar</button>
+          <button class="btn" id="btn-cancel-cfg">Cancelar</button>
+        </div>
+      </div>
     </div>
-    <div id="panel-body">
-      <div id="panel-content"></div>
+
+    <!-- SIDE PANEL -->
+    <div id="side-panel">
+      <div id="sp-head">
+        <div style="flex:1;min-width:0">
+          <p id="sp-activity-name"></p>
+          <span id="sp-cu-id"></span>
+        </div>
+        <button id="sp-close">×</button>
+      </div>
+      <div id="sp-body"></div>
+      <div id="sp-footer" style="display:none"></div>
     </div>
-    <div id="panel-footer" id="panel-link-area" style="display:none"></div>
   </div>
 </div>
 
 <input type="file" id="bpmn-file-input" accept=".bpmn,.xml" style="display:none">
 
 <script>
-const DEFAULT_CU_MAP = {
-  "act_inicio": { cu_id: "CU-01", cu_titulo: "Iniciar sesión", cu_descripcion: "Permite al usuario autenticarse en el sistema con usuario y contraseña.", actores: "Operador", estado: "Aprobado", drive_link: "https://drive.google.com/ejemplo1" },
-  "act_registrar": { cu_id: "CU-03", cu_titulo: "Registrar pedido", cu_descripcion: "El operador carga un nuevo pedido al sistema asignándole cliente, productos y condiciones de entrega.", actores: "Operador, Sistema", estado: "En revisión", drive_link: "https://drive.google.com/ejemplo2" },
-  "act_validar": { cu_id: "CU-04", cu_titulo: "Validar stock disponible", cu_descripcion: "El sistema verifica que los productos del pedido tengan stock suficiente antes de confirmar.", actores: "Sistema", estado: "Aprobado", drive_link: "https://drive.google.com/ejemplo3" },
-  "act_aprobar": { cu_id: "CU-07", cu_titulo: "Aprobar pedido", cu_descripcion: "El supervisor revisa el pedido generado y lo aprueba o rechaza según criterios de negocio.", actores: "Supervisor", estado: "Borrador", drive_link: "https://drive.google.com/ejemplo4" },
-  "act_notificar": { cu_id: "CU-09", cu_titulo: "Notificar al cliente", cu_descripcion: "El sistema envía una notificación automática al cliente confirmando el estado del pedido.", actores: "Sistema, Cliente", estado: "Aprobado", drive_link: "https://drive.google.com/ejemplo5" }
+let cuMap = {};
+let sheetUrl = '';
+let viewer = null;
+let currentOverlays = {};
+let selectedElementId = null;
+
+const ESTADO = {
+  'Aprobado':    { bg: '#eaf4ec', color: '#1e6b30' },
+  'En revisión': { bg: '#fdf3e3', color: '#7a4f0d' },
+  'Borrador':    { bg: '#f0efec', color: '#5a5855' },
+  'Pendiente':   { bg: '#f0efec', color: '#5a5855' },
 };
 
-let cuMap = JSON.parse(JSON.stringify(DEFAULT_CU_MAP));
-let selectedEl = null;
-let parsedBpmn = null;
+// --- STORAGE ---
+function save() {
+  try { localStorage.setItem('bpmn_cu_cfg', JSON.stringify({ sheetUrl })); } catch(e) {}
+}
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem('bpmn_cu_cfg') || '{}');
+    if (d.sheetUrl) { sheetUrl = d.sheetUrl; document.getElementById('sheet-url').value = sheetUrl; }
+  } catch(e) {}
+}
 
-const DEMO_PROCESSES = [
-  { id: "act_inicio", label: "Iniciar sesión", x: 80, y: 160, w: 110, h: 50, lane: 0 },
-  { id: "act_registrar", label: "Registrar pedido", x: 230, y: 160, w: 110, h: 50, lane: 0 },
-  { id: "act_validar", label: "Validar stock", x: 380, y: 160, w: 110, h: 50, lane: 1 },
-  { id: "act_aprobar", label: "Aprobar pedido", x: 380, y: 280, w: 110, h: 50, lane: 0 },
-  { id: "act_notificar", label: "Notificar cliente", x: 530, y: 160, w: 110, h: 50, lane: 1 }
-];
+// --- STATUS ---
+function setStatus(s, txt) {
+  const dot = document.getElementById('sdot');
+  const label = document.getElementById('stxt');
+  dot.className = 'status-dot' + (s ? ' ' + s : '');
+  label.textContent = txt;
+}
 
-const DEMO_FLOWS = [
-  ["act_inicio","act_registrar"], ["act_registrar","act_validar"],
-  ["act_validar","act_aprobar"], ["act_aprobar","act_notificar"]
-];
+// --- PROGRESS ---
+function progress(pct) {
+  const bar = document.getElementById('progress');
+  bar.style.width = pct + '%';
+  if (pct >= 100) setTimeout(() => bar.style.width = '0', 500);
+}
 
-const LANES = [
-  { label: "Operador", y: 120, h: 110, color: "#E6F1FB" },
-  { label: "Sistema", y: 235, h: 110, color: "#EAF3DE" }
-];
+// --- CSV PARSER ---
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  if (!lines.length) return [];
+  const headers = splitCSVLine(lines[0]);
+  return lines.slice(1).map(l => {
+    const vals = splitCSVLine(l);
+    const obj = {};
+    headers.forEach((h, i) => obj[h.trim()] = (vals[i] || '').trim());
+    return obj;
+  }).filter(r => r.activity_id);
+}
 
-const STATE_COLORS = { "Aprobado": "#EAF3DE", "En revisión": "#FAEEDA", "Borrador": "#F1EFE8" };
-const STATE_TEXT = { "Aprobado": "#27500A", "En revisión": "#633806", "Borrador": "#5F5E5A" };
+function splitCSVLine(line) {
+  const result = []; let cur = '', inQ = false;
+  for (let c of line) {
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { result.push(cur); cur = ''; }
+    else cur += c;
+  }
+  result.push(cur);
+  return result.map(v => v.replace(/^"|"$/g, ''));
+}
 
-function renderBpmn(processes, flows) {
-  const svg = document.getElementById('bpmn-canvas');
-  svg.innerHTML = '';
-  const ns = 'http://www.w3.org/2000/svg';
-
-  const defs = document.createElementNS(ns, 'defs');
-  const marker = document.createElementNS(ns, 'marker');
-  marker.setAttribute('id', 'arrow'); marker.setAttribute('markerWidth', '8'); marker.setAttribute('markerHeight', '8');
-  marker.setAttribute('refX', '6'); marker.setAttribute('refY', '3'); marker.setAttribute('orient', 'auto');
-  const path = document.createElementNS(ns, 'path');
-  path.setAttribute('d', 'M0,0 L0,6 L8,3 z'); path.setAttribute('fill', '#888780');
-  marker.appendChild(path); defs.appendChild(marker); svg.appendChild(defs);
-
-  LANES.forEach(lane => {
-    const r = document.createElementNS(ns, 'rect');
-    r.setAttribute('x', 20); r.setAttribute('y', lane.y); r.setAttribute('width', 680); r.setAttribute('height', lane.h);
-    r.setAttribute('rx', 4); r.setAttribute('fill', lane.color); r.setAttribute('stroke', '#B4B2A9'); r.setAttribute('stroke-width', '0.5');
-    svg.appendChild(r);
-    const t = document.createElementNS(ns, 'text');
-    t.setAttribute('x', 32); t.setAttribute('y', lane.y + lane.h / 2 + 4); t.setAttribute('font-size', '11');
-    t.setAttribute('fill', '#5F5E5A'); t.setAttribute('font-weight', '500'); t.textContent = lane.label;
-    svg.appendChild(t);
+function csvToMap(rows) {
+  const map = {};
+  rows.forEach(r => {
+    map[r.activity_id] = {
+      cu_id: r.cu_id || '',
+      cu_titulo: r.cu_titulo || 'Sin título',
+      actores: r.actores || '',
+      precondicion: r.precondicion || '',
+      flujo_resumido: r.flujo_resumido || '',
+      estado: r.estado || 'Pendiente',
+      drive_link: r.drive_link || ''
+    };
   });
+  return map;
+}
 
-  const startX = 50, startY = 175;
-  const sc = document.createElementNS(ns, 'circle');
-  sc.setAttribute('cx', startX); sc.setAttribute('cy', startY); sc.setAttribute('r', 14);
-  sc.setAttribute('fill', '#378ADD'); sc.setAttribute('stroke', 'none');
-  svg.appendChild(sc);
+// --- SHEETS ---
+async function reloadSheet() {
+  if (!sheetUrl) { setStatus('', 'Sin conectar'); return; }
+  setStatus('loading', 'Cargando...');
+  progress(30);
+  try {
+    const res = await fetch(sheetUrl);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    cuMap = csvToMap(parseCSV(text));
+    progress(100);
+    setStatus('ok', 'Sheets conectado · ' + Object.keys(cuMap).length + ' CUs');
+    applyOverlays();
+  } catch(e) {
+    progress(0);
+    setStatus('error', 'Error de conexión');
+    alert('No se pudo leer el Sheet.\n' + e.message);
+  }
+}
 
-  const endX = 665, endY = 175;
-  const ec = document.createElementNS(ns, 'circle');
-  ec.setAttribute('cx', endX); ec.setAttribute('cy', endY); ec.setAttribute('r', 14);
-  ec.setAttribute('fill', '#639922'); ec.setAttribute('stroke', '#3B6D11'); ec.setAttribute('stroke-width', '3');
-  svg.appendChild(ec);
+async function testSheet() {
+  const url = document.getElementById('sheet-url').value.trim();
+  if (!url) { alert('Ingresá la URL primero.'); return; }
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    const rows = parseCSV(text);
+    alert('Conexión exitosa.\n' + rows.length + ' filas encontradas.\nColumnas: ' + Object.keys(rows[0] || {}).join(', '));
+  } catch(e) { alert('No se pudo conectar:\n' + e.message); }
+}
 
-  const startLine = document.createElementNS(ns, 'line');
-  startLine.setAttribute('x1', 64); startLine.setAttribute('y1', startY); startLine.setAttribute('x2', processes[0].x); startLine.setAttribute('y2', processes[0].y + 25);
-  startLine.setAttribute('stroke', '#B4B2A9'); startLine.setAttribute('stroke-width', '1.5'); startLine.setAttribute('marker-end', 'url(#arrow)');
-  svg.appendChild(startLine);
-
-  flows.forEach(([from, to]) => {
-    const a = processes.find(p => p.id === from);
-    const b = processes.find(p => p.id === to);
-    if (!a || !b) return;
-    const ax = a.x + a.w / 2, ay = a.y + a.h / 2;
-    const bx = b.x + b.w / 2, by = b.y + b.h / 2;
-    let x1, y1, x2, y2;
-    if (Math.abs(ay - by) < 10) { x1 = a.x + a.w; y1 = ay; x2 = b.x; y2 = by; }
-    else if (ay < by) { x1 = ax; y1 = a.y + a.h; x2 = bx; y2 = b.y; }
-    else { x1 = ax; y1 = a.y; x2 = bx; y2 = b.y + b.h; }
-    const line = document.createElementNS(ns, 'line');
-    line.setAttribute('x1', x1); line.setAttribute('y1', y1); line.setAttribute('x2', x2); line.setAttribute('y2', y2);
-    line.setAttribute('stroke', '#B4B2A9'); line.setAttribute('stroke-width', '1.5'); line.setAttribute('marker-end', 'url(#arrow)');
-    svg.appendChild(line);
-  });
-
-  const lastP = processes[processes.length - 1];
-  const lastLine = document.createElementNS(ns, 'line');
-  lastLine.setAttribute('x1', lastP.x + lastP.w); lastLine.setAttribute('y1', lastP.y + lastP.h / 2);
-  lastLine.setAttribute('x2', endX - 14); lastLine.setAttribute('y2', endY);
-  lastLine.setAttribute('stroke', '#B4B2A9'); lastLine.setAttribute('stroke-width', '1.5'); lastLine.setAttribute('marker-end', 'url(#arrow)');
-  svg.appendChild(lastLine);
-
-  processes.forEach(proc => {
-    const hasCU = !!cuMap[proc.id];
-    const g = document.createElementNS(ns, 'g');
-    g.setAttribute('cursor', 'pointer');
-    g.setAttribute('data-id', proc.id);
-    g.setAttribute('data-label', proc.label);
-
-    const rect = document.createElementNS(ns, 'rect');
-    rect.setAttribute('x', proc.x); rect.setAttribute('y', proc.y);
-    rect.setAttribute('width', proc.w); rect.setAttribute('height', proc.h);
-    rect.setAttribute('rx', 6); rect.setAttribute('fill', '#FFFFFF');
-    rect.setAttribute('stroke', hasCU ? '#378ADD' : '#B4B2A9');
-    rect.setAttribute('stroke-width', hasCU ? '1.5' : '0.8');
-
-    const text = document.createElementNS(ns, 'text');
-    text.setAttribute('x', proc.x + proc.w / 2); text.setAttribute('y', proc.y + proc.h / 2 + 4);
-    text.setAttribute('text-anchor', 'middle'); text.setAttribute('font-size', '11');
-    text.setAttribute('fill', '#2C2C2A'); text.setAttribute('font-weight', '400');
-    text.textContent = proc.label;
-
-    g.appendChild(rect); g.appendChild(text);
-    g.addEventListener('click', () => handleActivityClick(proc.id, proc.label, g));
-    g.addEventListener('mouseenter', () => { if (selectedEl !== g) rect.setAttribute('stroke-width', '2'); });
-    g.addEventListener('mouseleave', () => { if (selectedEl !== g) rect.setAttribute('stroke-width', hasCU ? '1.5' : '0.8'); });
-    svg.appendChild(g);
+// --- BPMN VIEWER ---
+function initViewer() {
+  if (viewer) { viewer.destroy(); }
+  viewer = new BpmnJS({ container: '#bpmn-container', height: '100%' });
+  viewer.on('element.click', e => {
+    const el = e.element;
+    if (el.type && (el.type.includes('Task') || el.type.includes('Activity') || el.type.includes('CallActivity') || el.type.includes('SubProcess'))) {
+      handleElementClick(el);
+    }
   });
 }
 
-function handleActivityClick(id, label, el) {
-  if (selectedEl) {
-    const r = selectedEl.querySelector('rect');
-    const sid = selectedEl.getAttribute('data-id');
-    const hasCU = !!cuMap[sid];
-    r.setAttribute('stroke', hasCU ? '#378ADD' : '#B4B2A9');
-    r.setAttribute('stroke-width', hasCU ? '1.5' : '0.8');
-    r.setAttribute('fill', '#FFFFFF');
+async function loadBpmnXml(xml) {
+  document.getElementById('empty-state').classList.add('hidden');
+  if (!viewer) initViewer();
+  try {
+    await viewer.importXML(xml);
+    viewer.get('canvas').zoom('fit-viewport', 'auto');
+    applyOverlays();
+  } catch(e) {
+    alert('Error al cargar el BPMN:\n' + e.message);
+    document.getElementById('empty-state').classList.remove('hidden');
   }
-  selectedEl = el;
-  const rect = el.querySelector('rect');
-  rect.setAttribute('stroke', '#185FA5');
-  rect.setAttribute('stroke-width', '2');
-  rect.setAttribute('fill', '#E6F1FB');
+}
 
-  document.getElementById('panel-activity-name').textContent = label;
-  const cu = cuMap[id];
-  const body = document.getElementById('panel-body');
-  const footer = document.getElementById('panel-footer');
+function applyOverlays() {
+  if (!viewer) return;
+  const overlays = viewer.get('overlays');
+  const elementRegistry = viewer.get('elementRegistry');
+
+  Object.keys(currentOverlays).forEach(id => {
+    try { overlays.remove({ element: id }); } catch(e) {}
+  });
+  currentOverlays = {};
+
+  elementRegistry.forEach(el => {
+    const isTask = el.type && (
+      el.type.includes('Task') || el.type.includes('Activity') ||
+      el.type.includes('CallActivity') || el.type.includes('SubProcess')
+    );
+    if (!isTask) return;
+    const hasCU = !!cuMap[el.id];
+    if (hasCU) {
+      try {
+        const oid = overlays.add(el.id, {
+          position: { top: -8, right: -8 },
+          html: '<div style="width:8px;height:8px;border-radius:50%;background:#1d6fa4;border:1.5px solid #fff"></div>'
+        });
+        currentOverlays[el.id] = oid;
+      } catch(e) {}
+    }
+  });
+}
+
+function handleElementClick(el) {
+  selectedElementId = el.id;
+  const cu = cuMap[el.id];
+  const name = el.businessObject && el.businessObject.name ? el.businessObject.name : el.id;
+
+  document.getElementById('sp-activity-name').textContent = name;
 
   if (cu) {
-    const stateColor = STATE_COLORS[cu.estado] || '#F1EFE8';
-    const stateText = STATE_TEXT[cu.estado] || '#5F5E5A';
-    body.innerHTML = `
-      <p class="panel-activity-label">Actividad seleccionada</p>
-      <span class="cu-badge">${cu.cu_id}</span>
-      <p class="cu-title">${cu.cu_titulo}</p>
-      <p class="cu-desc">${cu.cu_descripcion}</p>
-      <div class="meta-row">
-        <span class="meta-pill">Actores: ${cu.actores}</span>
-        <span class="meta-pill" style="background:${stateColor};color:${stateText};border-color:transparent;">${cu.estado}</span>
-      </div>`;
+    const est = ESTADO[cu.estado] || ESTADO['Pendiente'];
+    const pasos = (cu.flujo_resumido || '').split('|').filter(Boolean);
+    document.getElementById('sp-cu-id').textContent = cu.cu_id;
+    document.getElementById('sp-cu-id').style.display = 'inline-block';
+    document.getElementById('sp-body').innerHTML = `
+      <p class="sp-section">Título</p>
+      <p class="sp-title">${cu.cu_titulo}</p>
+      <p class="sp-section">Actores</p>
+      <p class="sp-val">${cu.actores}</p>
+      <p class="sp-section">Precondición</p>
+      <p class="sp-val">${cu.precondicion}</p>
+      <p class="sp-section">Flujo principal</p>
+      <ol class="flujo-ol">${pasos.map((p,i) => `<li><span class="flujo-n">${i+1}</span><span>${p}</span></li>`).join('')}</ol>
+      <p class="sp-section">Estado</p>
+      <span class="estado-badge" style="background:${est.bg};color:${est.color}">${cu.estado}</span>
+    `;
+    const footer = document.getElementById('sp-footer');
     footer.style.display = 'block';
-    footer.innerHTML = `<a class="drive-btn" href="${cu.drive_link}" target="_blank">Abrir CU en Drive →</a>`;
+    footer.innerHTML = cu.drive_link
+      ? `<a class="drive-btn" href="${cu.drive_link}" target="_blank">Ver CU completo en Drive →</a>`
+      : `<p style="font-size:11px;color:var(--text-faint);text-align:center">Sin link de Drive configurado</p>`;
   } else {
-    body.innerHTML = `<p class="no-cu">Esta actividad no tiene un CU asignado todavía.<br><br>Usá el botón <strong>Configurar CUs</strong> para vincularlo.</p>`;
-    footer.style.display = 'none';
+    document.getElementById('sp-cu-id').style.display = 'none';
+    document.getElementById('sp-body').innerHTML = `
+      <p class="no-cu">Esta actividad no tiene CU asignado aún.<br><br>
+      Agregá una fila en el Google Sheet con:<br>
+      <code>activity_id = ${el.id}</code></p>`;
+    document.getElementById('sp-footer').style.display = 'none';
   }
-
   document.getElementById('side-panel').classList.add('open');
 }
 
-function openConfig() {
-  document.getElementById('cu-json').value = JSON.stringify(cuMap, null, 2);
-  document.getElementById('config-overlay').classList.add('open');
+// --- FILE HANDLING ---
+function readBpmnFile(file) {
+  const r = new FileReader();
+  r.onload = ev => loadBpmnXml(ev.target.result);
+  r.readAsText(file);
 }
 
-function saveConfig() {
-  try {
-    cuMap = JSON.parse(document.getElementById('cu-json').value);
-    document.getElementById('config-overlay').classList.remove('open');
-    renderBpmn(parsedBpmn || DEMO_PROCESSES, DEMO_FLOWS);
-  } catch(e) {
-    alert('JSON inválido. Revisá la sintaxis.');
-  }
-}
+// --- DRAG & DROP (canvas) ---
+const canvas = document.getElementById('canvas');
+const dropOverlay = document.getElementById('drop-overlay');
+canvas.addEventListener('dragover', e => { e.preventDefault(); dropOverlay.classList.add('active'); });
+canvas.addEventListener('dragleave', e => { if (!canvas.contains(e.relatedTarget)) dropOverlay.classList.remove('active'); });
+canvas.addEventListener('drop', e => {
+  e.preventDefault(); dropOverlay.classList.remove('active');
+  const f = e.dataTransfer.files[0];
+  if (f) readBpmnFile(f);
+});
 
-function parseBpmnXml(xmlText) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(xmlText, 'text/xml');
-  const tasks = [...doc.querySelectorAll('task, userTask, serviceTask, scriptTask, manualTask, businessRuleTask, callActivity, subProcess')];
-  const flows = [...doc.querySelectorAll('sequenceFlow')];
-  const flowPairs = flows.map(f => [f.getAttribute('sourceRef'), f.getAttribute('targetRef')]);
+// --- CONTROLS ---
+document.getElementById('btn-bpmn').addEventListener('click', () => document.getElementById('bpmn-file-input').click());
+document.getElementById('bpmn-file-input').addEventListener('change', e => { if (e.target.files[0]) readBpmnFile(e.target.files[0]); });
 
-  if (tasks.length === 0) return null;
-
-  const cols = Math.ceil(tasks.length / 2);
-  const processes = tasks.map((t, i) => ({
-    id: t.getAttribute('id'),
-    label: (t.getAttribute('name') || t.getAttribute('id')).substring(0, 22),
-    x: 70 + (i % cols) * 140,
-    y: i < cols ? 140 : 270,
-    w: 120, h: 50, lane: i < cols ? 0 : 1
-  }));
-
-  return { processes, flows: flowPairs.filter(([a, b]) => a && b) };
-}
-
-document.getElementById('btn-config').addEventListener('click', openConfig);
-document.getElementById('btn-save-cfg').addEventListener('click', saveConfig);
-document.getElementById('btn-close-cfg').addEventListener('click', () => document.getElementById('config-overlay').classList.remove('open'));
-document.getElementById('panel-close').addEventListener('click', () => {
+document.getElementById('btn-reload').addEventListener('click', reloadSheet);
+document.getElementById('sp-close').addEventListener('click', () => {
   document.getElementById('side-panel').classList.remove('open');
-  if (selectedEl) {
-    const r = selectedEl.querySelector('rect');
-    const sid = selectedEl.getAttribute('data-id');
-    r.setAttribute('stroke', cuMap[sid] ? '#378ADD' : '#B4B2A9');
-    r.setAttribute('stroke-width', cuMap[sid] ? '1.5' : '0.8');
-    r.setAttribute('fill', '#FFFFFF');
-    selectedEl = null;
-  }
+  selectedElementId = null;
 });
 
-document.getElementById('btn-upload-bpmn').addEventListener('click', () => document.getElementById('bpmn-file-input').click());
-document.getElementById('bpmn-file-input').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const result = parseBpmnXml(ev.target.result);
-    if (result) {
-      parsedBpmn = result.processes;
-      renderBpmn(result.processes, result.flows);
-      openConfig();
-    } else {
-      alert('No se encontraron tareas en el XML. Verificá que sea un BPMN válido.');
-    }
-  };
-  reader.readAsText(file);
+// ZOOM
+document.getElementById('btn-zoom-in').addEventListener('click', () => viewer && viewer.get('canvas').zoom(viewer.get('canvas').zoom() * 1.2));
+document.getElementById('btn-zoom-out').addEventListener('click', () => viewer && viewer.get('canvas').zoom(viewer.get('canvas').zoom() * 0.8));
+document.getElementById('btn-zoom-fit').addEventListener('click', () => viewer && viewer.get('canvas').zoom('fit-viewport', 'auto'));
+
+// CONFIG
+document.getElementById('btn-cfg').addEventListener('click', () => {
+  document.getElementById('sheet-url').value = sheetUrl;
+  document.getElementById('cfg-overlay').classList.add('open');
+});
+document.getElementById('btn-save-cfg').addEventListener('click', () => {
+  sheetUrl = document.getElementById('sheet-url').value.trim();
+  save();
+  document.getElementById('cfg-overlay').classList.remove('open');
+  if (sheetUrl) reloadSheet();
+});
+document.getElementById('btn-cancel-cfg').addEventListener('click', () => document.getElementById('cfg-overlay').classList.remove('open'));
+document.getElementById('btn-test').addEventListener('click', testSheet);
+
+// CONFIG DROP
+const cfgDrop = document.getElementById('cfg-drop');
+cfgDrop.addEventListener('click', () => document.getElementById('cfg-file').click());
+document.getElementById('cfg-file').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (f) { cfgDrop.textContent = f.name + ' — cargado'; readBpmnFile(f); }
+});
+cfgDrop.addEventListener('dragover', e => { e.preventDefault(); cfgDrop.classList.add('over'); });
+cfgDrop.addEventListener('dragleave', () => cfgDrop.classList.remove('over'));
+cfgDrop.addEventListener('drop', e => {
+  e.preventDefault(); cfgDrop.classList.remove('over');
+  const f = e.dataTransfer.files[0];
+  if (f) { cfgDrop.textContent = f.name + ' — cargado'; readBpmnFile(f); }
 });
 
-const dropZone = document.getElementById('drop-zone');
-dropZone.addEventListener('click', () => document.getElementById('file-input').click());
-document.getElementById('file-input').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  dropZone.textContent = file.name + ' — cargado ✓';
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const result = parseBpmnXml(ev.target.result);
-    if (result) {
-      parsedBpmn = result.processes;
-      renderBpmn(result.processes, result.flows);
-    }
-  };
-  reader.readAsText(file);
-});
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.background = 'var(--color-background-secondary)'; });
-dropZone.addEventListener('dragleave', () => { dropZone.style.background = ''; });
-dropZone.addEventListener('drop', e => {
-  e.preventDefault();
-  const file = e.dataTransfer.files[0];
-  if (!file) return;
-  dropZone.textContent = file.name + ' — cargado ✓';
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const result = parseBpmnXml(ev.target.result);
-    if (result) { parsedBpmn = result.processes; renderBpmn(result.processes, result.flows); }
-  };
-  reader.readAsText(file);
-});
-
-renderBpmn(DEMO_PROCESSES, DEMO_FLOWS);
+// --- INIT ---
+load();
+initViewer();
+if (sheetUrl) reloadSheet();
 </script>
+</body>
+</html>
