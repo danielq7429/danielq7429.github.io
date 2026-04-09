@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Navegador BPMN · CU</title>
+<title>Proceso de Expediente de Mensura · CU</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/bpmn-js@17.11.1/dist/bpmn-navigated-viewer.production.min.js"></script>
@@ -12,29 +12,43 @@
     --bg: #f7f6f3; --surface: #ffffff; --border: #e2e0db; --border-strong: #c8c5be;
     --text: #1a1916; --text-muted: #6b6860; --text-faint: #9c9a95;
     --blue: #1d6fa4; --blue-bg: #e8f2f9; --blue-dark: #185d8a;
-    --radius: 6px; --radius-lg: 10px; --panel-w: 360px;
+    --green: #1e7e34; --green-bg: #eaf4ec; --green-light: #d4edda;
+    --amber: #7a4f0d; --amber-bg: #fdf3e3;
+    --red: #a0260e; --red-bg: #fdecea;
+    --gray-bg: #f0efec; --gray-text: #5a5855;
+    --radius: 6px; --radius-lg: 10px; --panel-w: 380px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; overflow: hidden; font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
   #shell { display: flex; flex-direction: column; height: 100vh; }
 
-  #topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 16px; height: 48px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; gap: 12px; }
-  #topbar-left { display: flex; align-items: center; gap: 10px; }
-  #topbar-right { display: flex; align-items: center; gap: 6px; }
-  .app-name { font-size: 13px; font-weight: 500; letter-spacing: -0.01em; }
-  .divider { width: 1px; height: 18px; background: var(--border); }
+  /* HEADER */
+  #header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 10px 16px 0; flex-shrink: 0;
+  }
+  #header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  #header-titles { flex: 1; min-width: 0; }
+  .main-title { font-size: 14px; font-weight: 500; letter-spacing: -0.01em; color: var(--text); line-height: 1.2; }
+  .sub-title { font-size: 11px; color: var(--text-faint); margin-top: 2px; letter-spacing: 0.01em; }
+  #header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  #header-bottom { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; }
+  #header-bottom-left { display: flex; align-items: center; gap: 10px; }
   .status-wrap { display: flex; align-items: center; gap: 5px; }
   .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border-strong); flex-shrink: 0; transition: background 0.3s; }
   .status-dot.ok { background: #2e9e4f; } .status-dot.loading { background: #d4890a; } .status-dot.error { background: #c0392b; }
   .status-txt { font-size: 11px; color: var(--text-muted); }
+  .divider { width: 1px; height: 16px; background: var(--border); }
   .legend { display: flex; gap: 10px; }
-  .leg { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-muted); }
-  .leg-box { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); }
+  .leg-icon { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; }
+
   .btn { font-family: inherit; font-size: 12px; padding: 5px 10px; border-radius: var(--radius); cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: background 0.15s; white-space: nowrap; }
   .btn:hover { background: var(--bg); }
   .btn.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
   .btn.primary:hover { background: var(--blue-dark); }
 
+  /* MAIN */
   #main { display: flex; flex: 1; overflow: hidden; position: relative; }
   #canvas { flex: 1; overflow: hidden; position: relative; }
   #bpmn-container { width: 100%; height: 100%; }
@@ -49,40 +63,70 @@
   #drop-overlay { display: none; position: absolute; inset: 0; background: rgba(29,111,164,0.07); border: 2px dashed var(--blue); z-index: 100; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; color: var(--blue); border-radius: var(--radius-lg); }
   #drop-overlay.active { display: flex; }
 
+  /* SIDE PANEL */
   #side-panel { width: 0; overflow: hidden; flex-shrink: 0; border-left: 1px solid var(--border); background: var(--surface); display: flex; flex-direction: column; transition: width 0.2s ease; }
   #side-panel.open { width: var(--panel-w); }
 
   #sp-head { padding: 14px 16px 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-shrink: 0; background: var(--bg); }
   #sp-head-left { flex: 1; min-width: 0; }
-  #sp-activity-name { font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
-  #sp-cu-id-title { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-  .cu-id-badge { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 6px; border-radius: 3px; background: var(--blue-bg); color: var(--blue); font-weight: 500; white-space: nowrap; flex-shrink: 0; }
-  .cu-titulo-head { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.35; }
-  #sp-close { background: none; border: none; cursor: pointer; color: var(--text-faint); font-size: 18px; line-height: 1; padding: 2px; flex-shrink: 0; }
+  #sp-activity-name { font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 5px; }
+  .cu-head-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 3px; }
+  .cu-id-badge { font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 2px 7px; border-radius: 4px; background: var(--blue-bg); color: var(--blue); font-weight: 500; white-space: nowrap; }
+  .cu-titulo-head { font-size: 14px; font-weight: 500; color: var(--text); line-height: 1.3; }
+  .estado-inline { font-size: 10px; padding: 2px 7px; border-radius: 3px; font-weight: 500; }
+  #sp-close { background: none; border: none; cursor: pointer; color: var(--text-faint); font-size: 20px; line-height: 1; padding: 2px; flex-shrink: 0; }
   #sp-close:hover { color: var(--text); }
 
   #sp-body { flex: 1; overflow-y: auto; }
-  #sp-footer { padding: 12px 16px; border-top: 1px solid var(--border); flex-shrink: 0; }
+  #sp-footer { padding: 14px 16px; border-top: 1px solid var(--border); flex-shrink: 0; }
 
-  .sp-block { padding: 12px 16px; border-bottom: 1px solid var(--border); }
-  .sp-block:last-child { border-bottom: none; }
-  .sp-lbl { font-size: 10px; font-weight: 500; color: var(--text-faint); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 5px; }
-  .sp-val { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
-  .estado-badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 3px; font-weight: 500; }
+  /* PANEL SECTIONS */
+  .sp-section {
+    border-bottom: 1px solid var(--border);
+  }
+  .sp-section-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px 8px;
+  }
+  .sp-section-icon {
+    width: 20px; height: 20px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; flex-shrink: 0;
+  }
+  .sp-section-label { font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
+  .sp-section-body { padding: 0 16px 12px; }
+  .sp-val { font-size: 12px; color: var(--text-muted); line-height: 1.65; }
 
+  /* ACTORES */
+  .actor-row { display: flex; gap: 8px; margin-bottom: 6px; align-items: flex-start; }
+  .actor-row:last-child { margin-bottom: 0; }
+  .actor-lbl { font-size: 10px; color: var(--text-faint); min-width: 60px; padding-top: 1px; text-transform: uppercase; letter-spacing: .04em; flex-shrink: 0; }
+  .actor-val { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+  /* PRECONDICIONES */
+  .prec-list { list-style: none; padding: 0; }
+  .prec-item { display: flex; gap: 8px; font-size: 12px; color: var(--text-muted); padding: 4px 0; border-bottom: 1px solid var(--border); line-height: 1.5; }
+  .prec-item:last-child { border-bottom: none; }
+  .prec-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border-strong); margin-top: 6px; flex-shrink: 0; }
+
+  /* FLUJO */
   .flujo-list { list-style: none; padding: 0; }
-  .flujo-item { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .flujo-item { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); }
   .flujo-item:last-child { border-bottom: none; }
-  .flujo-n { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-faint); min-width: 18px; padding-top: 2px; flex-shrink: 0; }
-  .flujo-txt { font-size: 12px; color: var(--text-muted); line-height: 1.55; }
+  .flujo-n { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-faint); min-width: 20px; padding-top: 2px; flex-shrink: 0; font-weight: 500; }
+  .flujo-txt { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
 
-  .no-cu { padding: 16px; font-size: 12px; color: var(--text-muted); line-height: 1.65; }
-  .no-cu code { font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: #f0efec; padding: 1px 5px; border-radius: 3px; color: var(--text); }
+  /* POST */
+  .post-box { background: var(--green-bg); border-radius: var(--radius); padding: 10px 12px; font-size: 12px; color: #1a4a24; line-height: 1.6; }
 
-  .drive-btn { display: block; width: 100%; padding: 9px 12px; text-align: center; font-family: inherit; font-size: 12px; font-weight: 500; color: var(--blue); background: var(--blue-bg); border: none; border-radius: var(--radius); cursor: pointer; text-decoration: none; margin-bottom: 8px; }
+  .no-cu { padding: 20px 16px; font-size: 12px; color: var(--text-muted); line-height: 1.7; }
+  .no-cu code { font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: var(--gray-bg); padding: 2px 6px; border-radius: 3px; color: var(--text); }
+
+  .drive-btn { display: block; width: 100%; padding: 10px 12px; text-align: center; font-family: inherit; font-size: 12px; font-weight: 500; color: var(--blue); background: var(--blue-bg); border: none; border-radius: var(--radius); cursor: pointer; text-decoration: none; margin-bottom: 8px; }
   .drive-btn:hover { background: #d4e9f5; }
-  .srs-hint { font-size: 10px; color: var(--text-faint); text-align: center; line-height: 1.5; }
+  .srs-hint { font-size: 10px; color: var(--text-faint); text-align: center; line-height: 1.55; }
 
+  /* CONFIG OVERLAY */
   #cfg-overlay { display: none; position: absolute; inset: 0; background: var(--surface); z-index: 200; overflow-y: auto; padding: 24px; }
   #cfg-overlay.open { display: block; }
   .cfg-h { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
@@ -101,29 +145,48 @@
   #zoom-ctrl button { height: 28px; min-width: 28px; padding: 0 6px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-family: inherit; }
   #zoom-ctrl button:hover { background: var(--bg); }
   #btn-zoom-fit { font-size: 11px !important; }
-
   #progress { position: absolute; top: 0; left: 0; height: 2px; width: 0; background: var(--blue); transition: width 0.3s; z-index: 300; pointer-events: none; }
 </style>
 </head>
 <body>
 <div id="shell">
-  <div id="topbar">
-    <div id="topbar-left">
-      <span class="app-name">Navegador BPMN · CU</span>
-      <div class="divider"></div>
-      <div class="legend">
-        <div class="leg"><div class="leg-box" style="background:#e8f2f9;border:1.5px solid #1d6fa4"></div>Con CU</div>
-        <div class="leg"><div class="leg-box" style="background:#fff;border:1px solid #c8c5be"></div>Pendiente</div>
+  <div id="header">
+    <div id="header-top">
+      <div id="header-titles">
+        <p class="main-title">Proceso de Expediente de Mensura</p>
+        <p class="sub-title">Casos de uso sobre el proceso To Be</p>
+      </div>
+      <div id="header-right">
+        <div class="status-wrap">
+          <div class="status-dot" id="sdot"></div>
+          <span class="status-txt" id="stxt">Sin conectar</span>
+        </div>
+        <button class="btn" id="btn-reload">↺ Recargar</button>
+        <button class="btn" id="btn-bpmn">Cargar BPMN</button>
+        <button class="btn primary" id="btn-cfg">Configurar</button>
       </div>
     </div>
-    <div id="topbar-right">
-      <div class="status-wrap">
-        <div class="status-dot" id="sdot"></div>
-        <span class="status-txt" id="stxt">Sin conectar</span>
+    <div id="header-bottom">
+      <div id="header-bottom-left">
+        <div class="legend">
+          <div class="leg">
+            <div class="leg-icon" style="background:#eaf4ec;border:1px solid #2e9e4f;color:#1e7e34">✓</div>
+            Aprobado
+          </div>
+          <div class="leg">
+            <div class="leg-icon" style="background:#fdf3e3;border:1px solid #d4890a;color:#7a4f0d">!</div>
+            En revisión
+          </div>
+          <div class="leg">
+            <div class="leg-icon" style="background:#fdecea;border:1px solid #c0392b;color:#a0260e">✕</div>
+            Obsoleto
+          </div>
+          <div class="leg">
+            <div class="leg-icon" style="background:#fff;border:1px solid #c8c5be"></div>
+            Sin CU
+          </div>
+        </div>
       </div>
-      <button class="btn" id="btn-reload">↺ Recargar</button>
-      <button class="btn" id="btn-bpmn">Cargar BPMN</button>
-      <button class="btn primary" id="btn-cfg">Configurar</button>
     </div>
   </div>
 
@@ -142,6 +205,7 @@
         <button id="btn-zoom-fit">fit</button>
       </div>
       <div id="progress"></div>
+
       <div id="cfg-overlay">
         <p class="cfg-h">Configuración</p>
         <p class="cfg-sub">Conectá tu Google Sheet y actualizá el BPMN cuando haya cambios. Los datos del Sheet se recargan con ↺ sin tocar código.</p>
@@ -168,7 +232,7 @@
       <div id="sp-head">
         <div id="sp-head-left">
           <p id="sp-activity-name"></p>
-          <div id="sp-cu-id-title"></div>
+          <div id="sp-cu-head"></div>
         </div>
         <button id="sp-close">×</button>
       </div>
@@ -182,18 +246,28 @@
 
 <script>
 const BPMN_AUTO_URL = 'proceso.xml';
-const ESTADO_STYLE = {
-  'Aprobado':    { bg: '#eaf4ec', color: '#1e6b30' },
-  'En revisión': { bg: '#fdf3e3', color: '#7a4f0d' },
-  'Borrador':    { bg: '#f0efec', color: '#5a5855' },
-  'Pendiente':   { bg: '#f0efec', color: '#5a5855' },
+
+const ESTADO_CFG = {
+  'Aprobado':    { bg: '#eaf4ec', color: '#1e7e34', border: '#2e9e4f', icon: '✓', ovBg: '#2e9e4f' },
+  'En revisión': { bg: '#fdf3e3', color: '#7a4f0d', border: '#d4890a', icon: '!', ovBg: '#d4890a' },
+  'Obsoleto':    { bg: '#fdecea', color: '#a0260e', border: '#c0392b', icon: '✕', ovBg: '#c0392b' },
+  'Borrador':    { bg: '#f0efec', color: '#5a5855', border: '#c8c5be', icon: '·', ovBg: '#9c9a95' },
+  'Pendiente':   { bg: '#f0efec', color: '#5a5855', border: '#c8c5be', icon: '·', ovBg: '#9c9a95' },
 };
+
+const SECTION_ICONS = {
+  actores:    { icon: '👤', bg: '#e8f2f9', color: '#1d6fa4' },
+  prec:       { icon: '○',  bg: '#fdf3e3', color: '#7a4f0d' },
+  flujo:      { icon: '→',  bg: '#eaf4ec', color: '#1e7e34' },
+  post:       { icon: '✓',  bg: '#eaf4ec', color: '#1e7e34' },
+};
+
 let cuMap = {}, sheetUrl = '', viewer = null, overlayIds = {};
 
-function save() { try { localStorage.setItem('bpmn_cu_v2', JSON.stringify({ sheetUrl })); } catch(e) {} }
+function save() { try { localStorage.setItem('bpmn_cu_v3', JSON.stringify({ sheetUrl })); } catch(e) {} }
 function loadStorage() {
   try {
-    const d = JSON.parse(localStorage.getItem('bpmn_cu_v2') || '{}');
+    const d = JSON.parse(localStorage.getItem('bpmn_cu_v3') || '{}');
     if (d.sheetUrl) { sheetUrl = d.sheetUrl; document.getElementById('sheet-url').value = sheetUrl; }
   } catch(e) {}
 }
@@ -298,35 +372,78 @@ function applyOverlays() {
   overlayIds = {};
   er.forEach(el => {
     const isTask = el.type && (el.type.includes('Task') || el.type.includes('Activity') || el.type.includes('CallActivity') || el.type.includes('SubProcess'));
-    if (!isTask || !cuMap[el.id]) return;
-    try { overlayIds[el.id] = ov.add(el.id, { position: { top: -8, right: -8 }, html: '<div style="width:9px;height:9px;border-radius:50%;background:#1d6fa4;border:2px solid #fff"></div>' }); } catch(e) {}
+    if (!isTask) return;
+    const cu = cuMap[el.id];
+    if (!cu) return;
+    const est = ESTADO_CFG[cu.estado] || ESTADO_CFG['Pendiente'];
+    const html = `<div style="
+      width:16px;height:16px;border-radius:50%;
+      background:${est.ovBg};border:2px solid #fff;
+      display:flex;align-items:center;justify-content:center;
+      font-size:9px;font-weight:700;color:#fff;
+      font-family:'IBM Plex Sans',sans-serif;
+      box-shadow:0 1px 3px rgba(0,0,0,0.2)
+    ">${est.icon}</div>`;
+    try { overlayIds[el.id] = ov.add(el.id, { position: { top: -8, right: -8 }, html }); } catch(e) {}
   });
+}
+function makeSection(iconCfg, label, bodyHTML) {
+  return `<div class="sp-section">
+    <div class="sp-section-header">
+      <div class="sp-section-icon" style="background:${iconCfg.bg};color:${iconCfg.color}">${iconCfg.icon}</div>
+      <span class="sp-section-label">${label}</span>
+    </div>
+    <div class="sp-section-body">${bodyHTML}</div>
+  </div>`;
 }
 function handleElementClick(el) {
   const cu = cuMap[el.id];
   const name = el.businessObject && el.businessObject.name ? el.businessObject.name : el.id;
   document.getElementById('sp-activity-name').textContent = name;
+
   if (cu) {
-    const est = ESTADO_STYLE[cu.estado] || ESTADO_STYLE['Pendiente'];
-    const pasos = (cu.flujo_principal || '').split('|').filter(Boolean);
-    document.getElementById('sp-cu-id-title').innerHTML =
-      `<span class="cu-id-badge">${cu.cu_id}</span><span class="cu-titulo-head">${cu.cu_titulo}</span>`;
+    const est = ESTADO_CFG[cu.estado] || ESTADO_CFG['Pendiente'];
+    document.getElementById('sp-cu-head').innerHTML = `
+      <div class="cu-head-row">
+        <span class="cu-id-badge">${cu.cu_id}</span>
+        <span class="estado-inline" style="background:${est.bg};color:${est.color};border:1px solid ${est.border}">${cu.estado}</span>
+      </div>
+      <p class="cu-titulo-head">${cu.cu_titulo}</p>`;
+
     let html = '';
-    if (cu.actor_principal) html += `<div class="sp-block"><p class="sp-lbl">Actor principal</p><p class="sp-val">${cu.actor_principal}</p></div>`;
-    if (cu.actores_secundarios) html += `<div class="sp-block"><p class="sp-lbl">Actores secundarios</p><p class="sp-val">${cu.actores_secundarios}</p></div>`;
-    if (cu.precondicion) html += `<div class="sp-block"><p class="sp-lbl">Precondiciones</p><p class="sp-val">${cu.precondicion.replace(/\. /g,'.<br>')}</p></div>`;
-    if (pasos.length) html += `<div class="sp-block"><p class="sp-lbl">Flujo principal</p><ul class="flujo-list">${pasos.map((p,i)=>`<li class="flujo-item"><span class="flujo-n">${i+1}</span><span class="flujo-txt">${p.trim()}</span></li>`).join('')}</ul></div>`;
-    if (cu.postcondicion_exito) html += `<div class="sp-block"><p class="sp-lbl">Postcondición (éxito)</p><p class="sp-val">${cu.postcondicion_exito}</p></div>`;
-    html += `<div class="sp-block"><p class="sp-lbl">Estado</p><span class="estado-badge" style="background:${est.bg};color:${est.color}">${cu.estado}</span></div>`;
+
+    const actoresHTML = `
+      <div class="actor-row"><span class="actor-lbl">Principal</span><span class="actor-val">${cu.actor_principal}</span></div>
+      ${cu.actores_secundarios ? `<div class="actor-row"><span class="actor-lbl">Secundarios</span><span class="actor-val">${cu.actores_secundarios}</span></div>` : ''}`;
+    html += makeSection(SECTION_ICONS.actores, 'Actores', actoresHTML);
+
+    if (cu.precondicion) {
+      const precs = cu.precondicion.split('.').map(s => s.trim()).filter(Boolean);
+      const precHTML = `<ul class="prec-list">${precs.map(p => `<li class="prec-item"><span class="prec-dot"></span><span>${p}.</span></li>`).join('')}</ul>`;
+      html += makeSection(SECTION_ICONS.prec, 'Precondiciones', precHTML);
+    }
+
+    if (cu.flujo_principal) {
+      const pasos = cu.flujo_principal.split('|').filter(Boolean);
+      const flujoHTML = `<ul class="flujo-list">${pasos.map((p,i) => `<li class="flujo-item"><span class="flujo-n">${String(i+1).padStart(2,'0')}</span><span class="flujo-txt">${p.trim()}</span></li>`).join('')}</ul>`;
+      html += makeSection(SECTION_ICONS.flujo, 'Flujo principal', flujoHTML);
+    }
+
+    if (cu.postcondicion_exito) {
+      html += makeSection(SECTION_ICONS.post, 'Postcondición (éxito)', `<div class="post-box">${cu.postcondicion_exito}</div>`);
+    }
+
     document.getElementById('sp-body').innerHTML = html;
+
     const footer = document.getElementById('sp-footer');
     footer.style.display = 'block';
     footer.innerHTML = cu.drive_link
-      ? `<a class="drive-btn" href="${cu.drive_link}" target="_blank">Ver CU completo en el SRS →</a><p class="srs-hint">Flujos alternativos, validaciones, mensajes de error y tablas en el documento SRS</p>`
+      ? `<a class="drive-btn" href="${cu.drive_link}" target="_blank">Ver CU completo en el SRS →</a>
+         <p class="srs-hint">Flujos alternativos, validaciones, mensajes de error y tablas en el documento SRS</p>`
       : `<p class="srs-hint" style="text-align:center">Sin link al SRS configurado</p>`;
   } else {
-    document.getElementById('sp-cu-id-title').innerHTML = `<span class="cu-titulo-head" style="color:var(--text-muted)">Sin CU asignado</span>`;
-    document.getElementById('sp-body').innerHTML = `<div class="no-cu">Esta actividad no tiene un CU asignado todavía.<br><br>Agregá una fila en el Google Sheet con:<br><code>activity_id = ${el.id}</code></div>`;
+    document.getElementById('sp-cu-head').innerHTML = `<p class="cu-titulo-head" style="color:var(--text-muted)">Sin CU asignado</p>`;
+    document.getElementById('sp-body').innerHTML = `<div class="no-cu">Esta actividad no tiene un caso de uso asignado todavía.<br><br>Agregá una fila en el Google Sheet con:<br><code>activity_id = ${el.id}</code></div>`;
     document.getElementById('sp-footer').style.display = 'none';
   }
   document.getElementById('side-panel').classList.add('open');
@@ -351,7 +468,7 @@ document.getElementById('btn-cancel-cfg').addEventListener('click', () => docume
 document.getElementById('btn-test').addEventListener('click', testSheet);
 const cfgDrop = document.getElementById('cfg-drop');
 cfgDrop.addEventListener('click', () => document.getElementById('cfg-file').click());
-document.getElementById('cfg-file').addEventListener('change', e => { const f = e.target.files[0]; if (f) { cfgDrop.textContent = f.name + ' — cargado'; readFile(f); } });
+document.getElementById('cfg-file').addEventListener('change', e => { const f = e.target.files[0]; if (f) { cfgDrop.textContent = f.name+' — cargado'; readFile(f); } });
 cfgDrop.addEventListener('dragover', e => { e.preventDefault(); cfgDrop.classList.add('over'); });
 cfgDrop.addEventListener('dragleave', () => cfgDrop.classList.remove('over'));
 cfgDrop.addEventListener('drop', e => { e.preventDefault(); cfgDrop.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) { cfgDrop.textContent = f.name+' — cargado'; readFile(f); } });
