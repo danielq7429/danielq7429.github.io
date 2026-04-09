@@ -1,0 +1,346 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); }
+#app { display: flex; height: 600px; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); overflow: hidden; background: var(--color-background-primary); }
+#canvas-area { flex: 1; overflow: auto; position: relative; background: var(--color-background-tertiary); }
+#bpmn-canvas { min-width: 100%; min-height: 100%; }
+#side-panel { width: 0; overflow: hidden; transition: width 0.25s ease; border-left: 0.5px solid var(--color-border-tertiary); background: var(--color-background-primary); display: flex; flex-direction: column; }
+#side-panel.open { width: 300px; }
+#panel-header { padding: 16px; border-bottom: 0.5px solid var(--color-border-tertiary); display: flex; justify-content: space-between; align-items: center; }
+#panel-close { cursor: pointer; color: var(--color-text-secondary); font-size: 18px; background: none; border: none; line-height: 1; }
+#panel-body { padding: 16px; flex: 1; overflow-y: auto; }
+#panel-footer { padding: 16px; border-top: 0.5px solid var(--color-border-tertiary); }
+.cu-badge { display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: var(--border-radius-md); background: var(--color-background-info); color: var(--color-text-info); font-weight: 500; margin-bottom: 8px; }
+.cu-title { font-size: 15px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 8px; }
+.cu-desc { font-size: 13px; color: var(--color-text-secondary); line-height: 1.6; margin-bottom: 12px; }
+.meta-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.meta-pill { font-size: 11px; padding: 3px 8px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); color: var(--color-text-secondary); }
+.drive-btn { display: block; width: 100%; padding: 9px; text-align: center; background: none; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); color: var(--color-text-info); font-size: 13px; cursor: pointer; text-decoration: none; }
+.drive-btn:hover { background: var(--color-background-secondary); }
+.no-cu { font-size: 13px; color: var(--color-text-secondary); font-style: italic; }
+.toolbar { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; z-index: 10; }
+.tb-btn { font-size: 12px; padding: 5px 10px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-secondary); cursor: pointer; }
+.tb-btn:hover { background: var(--color-background-secondary); }
+.tb-btn.active { background: var(--color-background-info); color: var(--color-text-info); border-color: transparent; }
+#config-overlay { display: none; position: absolute; inset: 0; background: var(--color-background-primary); z-index: 20; overflow-y: auto; padding: 20px; }
+#config-overlay.open { display: block; }
+.cfg-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; color: var(--color-text-primary); }
+.cfg-sub { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 16px; }
+textarea { width: 100%; font-family: var(--font-mono); font-size: 12px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 10px; background: var(--color-background-tertiary); color: var(--color-text-primary); resize: vertical; min-height: 260px; }
+.cfg-actions { display: flex; gap: 8px; margin-top: 12px; }
+.btn-primary { padding: 8px 16px; background: var(--color-background-info); color: var(--color-text-info); border: none; border-radius: var(--border-radius-md); font-size: 13px; cursor: pointer; font-weight: 500; }
+.btn-secondary { padding: 8px 16px; background: none; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); font-size: 13px; color: var(--color-text-secondary); cursor: pointer; }
+.section-label { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
+.upload-area { border: 1.5px dashed var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 20px; text-align: center; color: var(--color-text-secondary); font-size: 13px; cursor: pointer; margin-bottom: 16px; }
+.upload-area:hover { background: var(--color-background-secondary); }
+.panel-activity-label { font-size: 11px; color: var(--color-text-tertiary); margin-bottom: 6px; }
+</style>
+
+<h2 class="sr-only">Navegador de casos de uso BPMN — clickeá una actividad para ver el CU asociado</h2>
+
+<div id="app">
+  <div id="canvas-area">
+    <div class="toolbar">
+      <button class="tb-btn" id="btn-upload-bpmn">Cargar BPMN</button>
+      <button class="tb-btn" id="btn-config">Configurar CUs</button>
+    </div>
+    <svg id="bpmn-canvas" viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div id="config-overlay">
+      <p class="cfg-title">Configurar casos de uso</p>
+      <p class="cfg-sub">Editá el JSON para mapear actividades a CUs. Al cargar un BPMN real, el ID viene del atributo <code>id</code> del elemento XML.</p>
+      <p class="section-label" style="margin-bottom:6px;">Cargar XML del BPMN</p>
+      <div class="upload-area" id="drop-zone">Soltá tu archivo .bpmn o .xml acá, o hacé click para elegirlo</div>
+      <input type="file" id="file-input" accept=".bpmn,.xml" style="display:none">
+      <p class="section-label">Mapeo actividades → CUs</p>
+      <textarea id="cu-json"></textarea>
+      <div class="cfg-actions">
+        <button class="btn-primary" id="btn-save-cfg">Guardar</button>
+        <button class="btn-secondary" id="btn-close-cfg">Cancelar</button>
+      </div>
+    </div>
+  </div>
+  <div id="side-panel">
+    <div id="panel-header">
+      <span style="font-size:13px; font-weight:500; color:var(--color-text-secondary);" id="panel-activity-name"></span>
+      <button id="panel-close">×</button>
+    </div>
+    <div id="panel-body">
+      <div id="panel-content"></div>
+    </div>
+    <div id="panel-footer" id="panel-link-area" style="display:none"></div>
+  </div>
+</div>
+
+<input type="file" id="bpmn-file-input" accept=".bpmn,.xml" style="display:none">
+
+<script>
+const DEFAULT_CU_MAP = {
+  "act_inicio": { cu_id: "CU-01", cu_titulo: "Iniciar sesión", cu_descripcion: "Permite al usuario autenticarse en el sistema con usuario y contraseña.", actores: "Operador", estado: "Aprobado", drive_link: "https://drive.google.com/ejemplo1" },
+  "act_registrar": { cu_id: "CU-03", cu_titulo: "Registrar pedido", cu_descripcion: "El operador carga un nuevo pedido al sistema asignándole cliente, productos y condiciones de entrega.", actores: "Operador, Sistema", estado: "En revisión", drive_link: "https://drive.google.com/ejemplo2" },
+  "act_validar": { cu_id: "CU-04", cu_titulo: "Validar stock disponible", cu_descripcion: "El sistema verifica que los productos del pedido tengan stock suficiente antes de confirmar.", actores: "Sistema", estado: "Aprobado", drive_link: "https://drive.google.com/ejemplo3" },
+  "act_aprobar": { cu_id: "CU-07", cu_titulo: "Aprobar pedido", cu_descripcion: "El supervisor revisa el pedido generado y lo aprueba o rechaza según criterios de negocio.", actores: "Supervisor", estado: "Borrador", drive_link: "https://drive.google.com/ejemplo4" },
+  "act_notificar": { cu_id: "CU-09", cu_titulo: "Notificar al cliente", cu_descripcion: "El sistema envía una notificación automática al cliente confirmando el estado del pedido.", actores: "Sistema, Cliente", estado: "Aprobado", drive_link: "https://drive.google.com/ejemplo5" }
+};
+
+let cuMap = JSON.parse(JSON.stringify(DEFAULT_CU_MAP));
+let selectedEl = null;
+let parsedBpmn = null;
+
+const DEMO_PROCESSES = [
+  { id: "act_inicio", label: "Iniciar sesión", x: 80, y: 160, w: 110, h: 50, lane: 0 },
+  { id: "act_registrar", label: "Registrar pedido", x: 230, y: 160, w: 110, h: 50, lane: 0 },
+  { id: "act_validar", label: "Validar stock", x: 380, y: 160, w: 110, h: 50, lane: 1 },
+  { id: "act_aprobar", label: "Aprobar pedido", x: 380, y: 280, w: 110, h: 50, lane: 0 },
+  { id: "act_notificar", label: "Notificar cliente", x: 530, y: 160, w: 110, h: 50, lane: 1 }
+];
+
+const DEMO_FLOWS = [
+  ["act_inicio","act_registrar"], ["act_registrar","act_validar"],
+  ["act_validar","act_aprobar"], ["act_aprobar","act_notificar"]
+];
+
+const LANES = [
+  { label: "Operador", y: 120, h: 110, color: "#E6F1FB" },
+  { label: "Sistema", y: 235, h: 110, color: "#EAF3DE" }
+];
+
+const STATE_COLORS = { "Aprobado": "#EAF3DE", "En revisión": "#FAEEDA", "Borrador": "#F1EFE8" };
+const STATE_TEXT = { "Aprobado": "#27500A", "En revisión": "#633806", "Borrador": "#5F5E5A" };
+
+function renderBpmn(processes, flows) {
+  const svg = document.getElementById('bpmn-canvas');
+  svg.innerHTML = '';
+  const ns = 'http://www.w3.org/2000/svg';
+
+  const defs = document.createElementNS(ns, 'defs');
+  const marker = document.createElementNS(ns, 'marker');
+  marker.setAttribute('id', 'arrow'); marker.setAttribute('markerWidth', '8'); marker.setAttribute('markerHeight', '8');
+  marker.setAttribute('refX', '6'); marker.setAttribute('refY', '3'); marker.setAttribute('orient', 'auto');
+  const path = document.createElementNS(ns, 'path');
+  path.setAttribute('d', 'M0,0 L0,6 L8,3 z'); path.setAttribute('fill', '#888780');
+  marker.appendChild(path); defs.appendChild(marker); svg.appendChild(defs);
+
+  LANES.forEach(lane => {
+    const r = document.createElementNS(ns, 'rect');
+    r.setAttribute('x', 20); r.setAttribute('y', lane.y); r.setAttribute('width', 680); r.setAttribute('height', lane.h);
+    r.setAttribute('rx', 4); r.setAttribute('fill', lane.color); r.setAttribute('stroke', '#B4B2A9'); r.setAttribute('stroke-width', '0.5');
+    svg.appendChild(r);
+    const t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', 32); t.setAttribute('y', lane.y + lane.h / 2 + 4); t.setAttribute('font-size', '11');
+    t.setAttribute('fill', '#5F5E5A'); t.setAttribute('font-weight', '500'); t.textContent = lane.label;
+    svg.appendChild(t);
+  });
+
+  const startX = 50, startY = 175;
+  const sc = document.createElementNS(ns, 'circle');
+  sc.setAttribute('cx', startX); sc.setAttribute('cy', startY); sc.setAttribute('r', 14);
+  sc.setAttribute('fill', '#378ADD'); sc.setAttribute('stroke', 'none');
+  svg.appendChild(sc);
+
+  const endX = 665, endY = 175;
+  const ec = document.createElementNS(ns, 'circle');
+  ec.setAttribute('cx', endX); ec.setAttribute('cy', endY); ec.setAttribute('r', 14);
+  ec.setAttribute('fill', '#639922'); ec.setAttribute('stroke', '#3B6D11'); ec.setAttribute('stroke-width', '3');
+  svg.appendChild(ec);
+
+  const startLine = document.createElementNS(ns, 'line');
+  startLine.setAttribute('x1', 64); startLine.setAttribute('y1', startY); startLine.setAttribute('x2', processes[0].x); startLine.setAttribute('y2', processes[0].y + 25);
+  startLine.setAttribute('stroke', '#B4B2A9'); startLine.setAttribute('stroke-width', '1.5'); startLine.setAttribute('marker-end', 'url(#arrow)');
+  svg.appendChild(startLine);
+
+  flows.forEach(([from, to]) => {
+    const a = processes.find(p => p.id === from);
+    const b = processes.find(p => p.id === to);
+    if (!a || !b) return;
+    const ax = a.x + a.w / 2, ay = a.y + a.h / 2;
+    const bx = b.x + b.w / 2, by = b.y + b.h / 2;
+    let x1, y1, x2, y2;
+    if (Math.abs(ay - by) < 10) { x1 = a.x + a.w; y1 = ay; x2 = b.x; y2 = by; }
+    else if (ay < by) { x1 = ax; y1 = a.y + a.h; x2 = bx; y2 = b.y; }
+    else { x1 = ax; y1 = a.y; x2 = bx; y2 = b.y + b.h; }
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1); line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+    line.setAttribute('stroke', '#B4B2A9'); line.setAttribute('stroke-width', '1.5'); line.setAttribute('marker-end', 'url(#arrow)');
+    svg.appendChild(line);
+  });
+
+  const lastP = processes[processes.length - 1];
+  const lastLine = document.createElementNS(ns, 'line');
+  lastLine.setAttribute('x1', lastP.x + lastP.w); lastLine.setAttribute('y1', lastP.y + lastP.h / 2);
+  lastLine.setAttribute('x2', endX - 14); lastLine.setAttribute('y2', endY);
+  lastLine.setAttribute('stroke', '#B4B2A9'); lastLine.setAttribute('stroke-width', '1.5'); lastLine.setAttribute('marker-end', 'url(#arrow)');
+  svg.appendChild(lastLine);
+
+  processes.forEach(proc => {
+    const hasCU = !!cuMap[proc.id];
+    const g = document.createElementNS(ns, 'g');
+    g.setAttribute('cursor', 'pointer');
+    g.setAttribute('data-id', proc.id);
+    g.setAttribute('data-label', proc.label);
+
+    const rect = document.createElementNS(ns, 'rect');
+    rect.setAttribute('x', proc.x); rect.setAttribute('y', proc.y);
+    rect.setAttribute('width', proc.w); rect.setAttribute('height', proc.h);
+    rect.setAttribute('rx', 6); rect.setAttribute('fill', '#FFFFFF');
+    rect.setAttribute('stroke', hasCU ? '#378ADD' : '#B4B2A9');
+    rect.setAttribute('stroke-width', hasCU ? '1.5' : '0.8');
+
+    const text = document.createElementNS(ns, 'text');
+    text.setAttribute('x', proc.x + proc.w / 2); text.setAttribute('y', proc.y + proc.h / 2 + 4);
+    text.setAttribute('text-anchor', 'middle'); text.setAttribute('font-size', '11');
+    text.setAttribute('fill', '#2C2C2A'); text.setAttribute('font-weight', '400');
+    text.textContent = proc.label;
+
+    g.appendChild(rect); g.appendChild(text);
+    g.addEventListener('click', () => handleActivityClick(proc.id, proc.label, g));
+    g.addEventListener('mouseenter', () => { if (selectedEl !== g) rect.setAttribute('stroke-width', '2'); });
+    g.addEventListener('mouseleave', () => { if (selectedEl !== g) rect.setAttribute('stroke-width', hasCU ? '1.5' : '0.8'); });
+    svg.appendChild(g);
+  });
+}
+
+function handleActivityClick(id, label, el) {
+  if (selectedEl) {
+    const r = selectedEl.querySelector('rect');
+    const sid = selectedEl.getAttribute('data-id');
+    const hasCU = !!cuMap[sid];
+    r.setAttribute('stroke', hasCU ? '#378ADD' : '#B4B2A9');
+    r.setAttribute('stroke-width', hasCU ? '1.5' : '0.8');
+    r.setAttribute('fill', '#FFFFFF');
+  }
+  selectedEl = el;
+  const rect = el.querySelector('rect');
+  rect.setAttribute('stroke', '#185FA5');
+  rect.setAttribute('stroke-width', '2');
+  rect.setAttribute('fill', '#E6F1FB');
+
+  document.getElementById('panel-activity-name').textContent = label;
+  const cu = cuMap[id];
+  const body = document.getElementById('panel-body');
+  const footer = document.getElementById('panel-footer');
+
+  if (cu) {
+    const stateColor = STATE_COLORS[cu.estado] || '#F1EFE8';
+    const stateText = STATE_TEXT[cu.estado] || '#5F5E5A';
+    body.innerHTML = `
+      <p class="panel-activity-label">Actividad seleccionada</p>
+      <span class="cu-badge">${cu.cu_id}</span>
+      <p class="cu-title">${cu.cu_titulo}</p>
+      <p class="cu-desc">${cu.cu_descripcion}</p>
+      <div class="meta-row">
+        <span class="meta-pill">Actores: ${cu.actores}</span>
+        <span class="meta-pill" style="background:${stateColor};color:${stateText};border-color:transparent;">${cu.estado}</span>
+      </div>`;
+    footer.style.display = 'block';
+    footer.innerHTML = `<a class="drive-btn" href="${cu.drive_link}" target="_blank">Abrir CU en Drive →</a>`;
+  } else {
+    body.innerHTML = `<p class="no-cu">Esta actividad no tiene un CU asignado todavía.<br><br>Usá el botón <strong>Configurar CUs</strong> para vincularlo.</p>`;
+    footer.style.display = 'none';
+  }
+
+  document.getElementById('side-panel').classList.add('open');
+}
+
+function openConfig() {
+  document.getElementById('cu-json').value = JSON.stringify(cuMap, null, 2);
+  document.getElementById('config-overlay').classList.add('open');
+}
+
+function saveConfig() {
+  try {
+    cuMap = JSON.parse(document.getElementById('cu-json').value);
+    document.getElementById('config-overlay').classList.remove('open');
+    renderBpmn(parsedBpmn || DEMO_PROCESSES, DEMO_FLOWS);
+  } catch(e) {
+    alert('JSON inválido. Revisá la sintaxis.');
+  }
+}
+
+function parseBpmnXml(xmlText) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlText, 'text/xml');
+  const tasks = [...doc.querySelectorAll('task, userTask, serviceTask, scriptTask, manualTask, businessRuleTask, callActivity, subProcess')];
+  const flows = [...doc.querySelectorAll('sequenceFlow')];
+  const flowPairs = flows.map(f => [f.getAttribute('sourceRef'), f.getAttribute('targetRef')]);
+
+  if (tasks.length === 0) return null;
+
+  const cols = Math.ceil(tasks.length / 2);
+  const processes = tasks.map((t, i) => ({
+    id: t.getAttribute('id'),
+    label: (t.getAttribute('name') || t.getAttribute('id')).substring(0, 22),
+    x: 70 + (i % cols) * 140,
+    y: i < cols ? 140 : 270,
+    w: 120, h: 50, lane: i < cols ? 0 : 1
+  }));
+
+  return { processes, flows: flowPairs.filter(([a, b]) => a && b) };
+}
+
+document.getElementById('btn-config').addEventListener('click', openConfig);
+document.getElementById('btn-save-cfg').addEventListener('click', saveConfig);
+document.getElementById('btn-close-cfg').addEventListener('click', () => document.getElementById('config-overlay').classList.remove('open'));
+document.getElementById('panel-close').addEventListener('click', () => {
+  document.getElementById('side-panel').classList.remove('open');
+  if (selectedEl) {
+    const r = selectedEl.querySelector('rect');
+    const sid = selectedEl.getAttribute('data-id');
+    r.setAttribute('stroke', cuMap[sid] ? '#378ADD' : '#B4B2A9');
+    r.setAttribute('stroke-width', cuMap[sid] ? '1.5' : '0.8');
+    r.setAttribute('fill', '#FFFFFF');
+    selectedEl = null;
+  }
+});
+
+document.getElementById('btn-upload-bpmn').addEventListener('click', () => document.getElementById('bpmn-file-input').click());
+document.getElementById('bpmn-file-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const result = parseBpmnXml(ev.target.result);
+    if (result) {
+      parsedBpmn = result.processes;
+      renderBpmn(result.processes, result.flows);
+      openConfig();
+    } else {
+      alert('No se encontraron tareas en el XML. Verificá que sea un BPMN válido.');
+    }
+  };
+  reader.readAsText(file);
+});
+
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('click', () => document.getElementById('file-input').click());
+document.getElementById('file-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  dropZone.textContent = file.name + ' — cargado ✓';
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const result = parseBpmnXml(ev.target.result);
+    if (result) {
+      parsedBpmn = result.processes;
+      renderBpmn(result.processes, result.flows);
+    }
+  };
+  reader.readAsText(file);
+});
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.background = 'var(--color-background-secondary)'; });
+dropZone.addEventListener('dragleave', () => { dropZone.style.background = ''; });
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  dropZone.textContent = file.name + ' — cargado ✓';
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const result = parseBpmnXml(ev.target.result);
+    if (result) { parsedBpmn = result.processes; renderBpmn(result.processes, result.flows); }
+  };
+  reader.readAsText(file);
+});
+
+renderBpmn(DEMO_PROCESSES, DEMO_FLOWS);
+</script>
