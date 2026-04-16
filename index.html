@@ -253,7 +253,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 <body>
 <div id="shell">
   <nav id="navbar">
-    <a id="logo" href="#">
+    <a id="logo" href="#" onclick="document.getElementById('side-panel').classList.remove('open');if(viewer)viewer.get('canvas').zoom('fit-viewport','auto');return false;">
       <svg id="logo-icon" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect width="30" height="30" rx="7" fill="#2563eb"/>
         <path d="M7 5.5h9.5l6.5 6.5V24a1.5 1.5 0 01-1.5 1.5H7A1.5 1.5 0 015.5 24V7A1.5 1.5 0 017 5.5z" fill="white" opacity=".9"/>
@@ -318,6 +318,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
       </div>
       <div id="progress"></div>
       <div id="cfg-overlay">
+        <button onclick="document.getElementById('cfg-overlay').classList.remove('open')" style="position:absolute;top:20px;right:20px;width:28px;height:28px;border-radius:8px;border:none;background:transparent;cursor:pointer;color:var(--text-faint);font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .15s;z-index:1" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">&#215;</button>
         <p class="cfg-h">Configuracion</p>
         <p class="cfg-sub">Conecta las fuentes de datos y actualiza el BPMN cuando haya cambios.</p>
         <p class="cfg-lbl">Sheet de CUs &#8212; URL CSV</p>
@@ -390,7 +391,9 @@ var IC={
   flujo:  {i:'>',bg:'var(--blue-bg)',c:'var(--blue-text)'},
   alt:    {i:'!',bg:'var(--amber-bg)',c:'var(--amber-text)'}
 };
-var cuMap={},glossaryData=[],sheetUrl='',glossaryUrl='',viewer=null,ovIds={},isDark=false,glosTimer=null;
+var cuMap={},glossaryData=[],viewer=null,ovIds={},isDark=false,glosTimer=null;
+var sheetUrl='https://docs.google.com/spreadsheets/d/e/2PACX-1vSGxeQC-Ut0ejNtFQ6mfA15OihshiMVidmhnCfgWHDwV_UDqU14LWBRRoRtZ5ZbBd2vUEa2YoRao2TO/pub?gid=0&single=true&output=csv';
+var glossaryUrl='https://docs.google.com/spreadsheets/d/e/2PACX-1vRR5QUj6VuUFscbkmwsC_RBQ0ZqYOo7f4cDK2w5OjRyFkX4TaHp486-z5e-3Q26oO3TREyK0MOSOHoJ/pub?gid=0&single=true&output=csv';
 
 function save(){try{localStorage.setItem('docflow_v6',JSON.stringify({sheetUrl:sheetUrl,glossaryUrl:glossaryUrl,isDark:isDark}));}catch(e){}}
 function loadStorage(){
@@ -492,52 +495,39 @@ function initViewer(){
   viewer=new BpmnJS({container:'#bpmn-container',height:'100%'});
   viewer.on('element.click',function(e){var el=e.element;if(el.type&&(el.type.includes('Task')||el.type.includes('Activity')||el.type.includes('CallActivity')||el.type.includes('SubProcess')))handleClick(el);});
 
+  // Tooltip de lane al hacer hover
   var tooltip=document.getElementById('lane-tooltip');
   var laneColors=['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#f97316','#84cc16'];
-  var lastElId=null;
 
-  document.getElementById('bpmn-container').addEventListener('mousemove',function(ev){
-    if(!viewer)return;
-    var x=ev.clientX+14,y=ev.clientY-10;
-    var tw=tooltip.offsetWidth,th=tooltip.offsetHeight;
-    if(x+tw>window.innerWidth-10)x=ev.clientX-tw-14;
-    if(y+th>window.innerHeight-10)y=ev.clientY-th-10;
-    tooltip.style.left=x+'px';
-    tooltip.style.top=y+'px';
+  viewer.on('element.mouseenter',function(e){
+    var el=e.element;
+    if(!el.type||(!el.type.includes('Task')&&!el.type.includes('Activity')&&!el.type.includes('CallActivity')&&!el.type.includes('SubProcess')))return;
+    var bo=el.businessObject;
+    if(!bo)return;
 
-    var er=viewer.get('elementRegistry');
-    var canvas=viewer.get('canvas');
-    var containerRect=document.getElementById('bpmn-container').getBoundingClientRect();
-    var vp=canvas.viewbox();
-    var mx=(ev.clientX-containerRect.left)/vp.scale+vp.x;
-    var my=(ev.clientY-containerRect.top)/vp.scale+vp.y;
-
-    var found=null;
-    er.forEach(function(el){
-      var t=el.type;
-      if(!t||(!t.includes('Task')&&!t.includes('Activity')&&!t.includes('CallActivity')&&!t.includes('SubProcess')))return;
-      if(mx>=el.x&&mx<=el.x+el.width&&my>=el.y&&my<=el.y+el.height)found=el;
-    });
-
-    if(!found){tooltip.style.display='none';lastElId=null;return;}
-    if(found.id===lastElId)return;
-    lastElId=found.id;
-
-    var bo=found.businessObject;
-    if(!bo){tooltip.style.display='none';return;}
-
-    var laneName='',poolName='',laneIdx=0;
+    // Buscar lane y pool padres
+    var laneName='',poolName='',laneColor=laneColors[0];
     var parent=bo.$parent;
+    var laneIdx=0;
+
+    // Recorrer jerarquía para encontrar lane y pool
     while(parent){
       if(parent.$type&&parent.$type.indexOf('Lane')!==-1&&!laneName){
         laneName=parent.name||'Lane sin nombre';
-        var siblings=[];
-        if(parent.$parent&&parent.$parent.lanes)siblings=parent.$parent.lanes;
-        else if(parent.$parent&&parent.$parent.flowElements)siblings=parent.$parent.flowElements.filter(function(f){return f.$type&&f.$type.indexOf('Lane')!==-1;});
-        laneIdx=Math.max(0,siblings.indexOf(parent));
+        // Calcular indice del lane para color
+        if(parent.$parent&&parent.$parent.flowElements){
+          var lanes=parent.$parent.flowElements.filter(function(f){return f.$type&&f.$type.indexOf('Lane')!==-1;});
+          laneIdx=lanes.indexOf(parent);
+          if(laneIdx<0)laneIdx=0;
+        } else if(parent.$parent&&parent.$parent.lanes){
+          laneIdx=parent.$parent.lanes.indexOf(parent);
+          if(laneIdx<0)laneIdx=0;
+        }
+        laneColor=laneColors[laneIdx%laneColors.length];
       }
-      if(parent.$type&&parent.$type.indexOf('Process')!==-1&&!poolName){
-        var defs=parent;
+      if(parent.$type&&(parent.$type.indexOf('Process')!==-1||parent.$type.indexOf('Collaboration')!==-1)&&!poolName){
+        // buscar participant que wrappea este proceso
+        var defs=bo.$parent;
         while(defs&&defs.$type!=='bpmn:Definitions')defs=defs.$parent;
         if(defs&&defs.rootElements){
           defs.rootElements.forEach(function(r){
@@ -550,84 +540,35 @@ function initViewer(){
       parent=parent.$parent;
     }
 
-    if(!laneName){tooltip.style.display='none';return;}
+    if(!laneName)return;
+
     document.getElementById('ltt-pool').textContent=poolName||'Proceso';
     document.getElementById('ltt-lane').textContent=laneName;
-    document.getElementById('ltt-dot').style.background=laneColors[laneIdx%laneColors.length];
+    document.getElementById('ltt-dot').style.background=laneColor;
     tooltip.style.display='block';
   });
 
-  document.getElementById('bpmn-container').addEventListener('mouseleave',function(){
-    tooltip.style.display='none';lastElId=null;
+  viewer.on('element.mouseleave',function(e){
+    var el=e.element;
+    if(el.type&&(el.type.includes('Task')||el.type.includes('Activity')||el.type.includes('CallActivity')||el.type.includes('SubProcess')))
+      tooltip.style.display='none';
   });
-}
-var laneTooltipReady=false;
-function setupLaneTooltip(){
-  if(laneTooltipReady)return;
-  laneTooltipReady=true;
-  var tooltip=document.getElementById('lane-tooltip');
-  var laneColors=['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#f97316','#84cc16'];
-  var lastElId=null;
+
+  // Seguir el mouse
   document.getElementById('bpmn-container').addEventListener('mousemove',function(ev){
-    var er=viewer.get('elementRegistry');
-    var canvas=viewer.get('canvas');
-    var rect=document.getElementById('bpmn-container').getBoundingClientRect();
-    var vp=canvas.viewbox();
-    var mx=(ev.clientX-rect.left)/vp.scale+vp.x;
-    var my=(ev.clientY-rect.top)/vp.scale+vp.y;
-    var found=null;
-    er.forEach(function(el){
-      var t=el.type;
-      if(!t||(!t.includes('Task')&&!t.includes('Activity')&&!t.includes('CallActivity')&&!t.includes('SubProcess')))return;
-      if(mx>=el.x&&mx<=el.x+el.width&&my>=el.y&&my<=el.y+el.height)found=el;
-    });
-    if(!found){tooltip.style.display='none';lastElId=null;return;}
-    if(found.id===lastElId){
-      var x=ev.clientX+14,y=ev.clientY-10;
-      if(x+tooltip.offsetWidth>window.innerWidth-10)x=ev.clientX-tooltip.offsetWidth-14;
-      if(y+tooltip.offsetHeight>window.innerHeight-10)y=ev.clientY-tooltip.offsetHeight-10;
-      tooltip.style.left=x+'px';tooltip.style.top=y+'px';
-      return;
-    }
-    lastElId=found.id;
-    var bo=found.businessObject;
-    if(!bo){tooltip.style.display='none';return;}
-    var laneName='',poolName='',laneIdx=0;
-    var parent=bo.$parent;
-    while(parent){
-      if(parent.$type&&parent.$type.indexOf('Lane')!==-1&&!laneName){
-        laneName=parent.name||'Lane sin nombre';
-        var sib=parent.$parent&&parent.$parent.lanes?parent.$parent.lanes:[];
-        laneIdx=Math.max(0,sib.indexOf(parent));
-      }
-      if(parent.$type&&parent.$type.indexOf('Process')!==-1&&!poolName){
-        var defs=parent;
-        while(defs&&defs.$type!=='bpmn:Definitions')defs=defs.$parent;
-        if(defs&&defs.rootElements){defs.rootElements.forEach(function(r){if(r.$type==='bpmn:Collaboration'&&r.participants){r.participants.forEach(function(p){if(p.processRef===parent&&p.name)poolName=p.name;})}});}
-      }
-      parent=parent.$parent;
-    }
-    if(!laneName){tooltip.style.display='none';return;}
-    document.getElementById('ltt-pool').textContent=poolName||'Proceso';
-    document.getElementById('ltt-lane').textContent=laneName;
-    document.getElementById('ltt-dot').style.background=laneColors[laneIdx%laneColors.length];
-    tooltip.style.display='block';
+    if(tooltip.style.display==='none')return;
     var x=ev.clientX+14,y=ev.clientY-10;
-    if(x+tooltip.offsetWidth>window.innerWidth-10)x=ev.clientX-tooltip.offsetWidth-14;
-    if(y+tooltip.offsetHeight>window.innerHeight-10)y=ev.clientY-tooltip.offsetHeight-10;
-    tooltip.style.left=x+'px';tooltip.style.top=y+'px';
+    var tw=tooltip.offsetWidth,th=tooltip.offsetHeight;
+    if(x+tw>window.innerWidth-10)x=ev.clientX-tw-10;
+    if(y+th>window.innerHeight-10)y=ev.clientY-th-10;
+    tooltip.style.left=x+'px';
+    tooltip.style.top=y+'px';
   });
-  document.getElementById('bpmn-container').addEventListener('mouseleave',function(){tooltip.style.display='none';lastElId=null;});
 }
 async function loadXml(xml){
   document.getElementById('empty-state').classList.add('hidden');
   if(!viewer)initViewer();
-  try{
-    await viewer.importXML(xml);
-    viewer.get('canvas').zoom('fit-viewport','auto');
-    applyOverlays();
-    setupLaneTooltip();
-  }
+  try{await viewer.importXML(xml);viewer.get('canvas').zoom('fit-viewport','auto');applyOverlays();}
   catch(e){document.getElementById('empty-state').classList.remove('hidden');document.getElementById('empty-title').textContent='Error al cargar el BPMN';document.getElementById('empty-sub').textContent=e.message;}
 }
 async function autoLoad(){
@@ -781,7 +722,6 @@ document.getElementById('cfg-file').addEventListener('change',function(e){var f=
 cd.addEventListener('dragover',function(e){e.preventDefault();cd.classList.add('over');});
 cd.addEventListener('dragleave',function(){cd.classList.remove('over');});
 cd.addEventListener('drop',function(e){e.preventDefault();cd.classList.remove('over');var f=e.dataTransfer.files[0];if(f){cd.textContent=f.name+' - cargado';readFile(f);}});
-
 loadStorage();initViewer();autoLoad();if(sheetUrl)reloadSheet();if(glossaryUrl)reloadGlossary();
 </script>
 </body>
