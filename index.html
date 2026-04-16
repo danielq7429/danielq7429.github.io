@@ -492,39 +492,52 @@ function initViewer(){
   viewer=new BpmnJS({container:'#bpmn-container',height:'100%'});
   viewer.on('element.click',function(e){var el=e.element;if(el.type&&(el.type.includes('Task')||el.type.includes('Activity')||el.type.includes('CallActivity')||el.type.includes('SubProcess')))handleClick(el);});
 
-  // Tooltip de lane al hacer hover
   var tooltip=document.getElementById('lane-tooltip');
   var laneColors=['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#f97316','#84cc16'];
+  var lastElId=null;
 
-  viewer.on('element.mouseenter',function(e){
-    var el=e.element;
-    if(!el.type||(!el.type.includes('Task')&&!el.type.includes('Activity')&&!el.type.includes('CallActivity')&&!el.type.includes('SubProcess')))return;
-    var bo=el.businessObject;
-    if(!bo)return;
+  document.getElementById('bpmn-container').addEventListener('mousemove',function(ev){
+    if(!viewer)return;
+    var x=ev.clientX+14,y=ev.clientY-10;
+    var tw=tooltip.offsetWidth,th=tooltip.offsetHeight;
+    if(x+tw>window.innerWidth-10)x=ev.clientX-tw-14;
+    if(y+th>window.innerHeight-10)y=ev.clientY-th-10;
+    tooltip.style.left=x+'px';
+    tooltip.style.top=y+'px';
 
-    // Buscar lane y pool padres
-    var laneName='',poolName='',laneColor=laneColors[0];
+    var er=viewer.get('elementRegistry');
+    var canvas=viewer.get('canvas');
+    var containerRect=document.getElementById('bpmn-container').getBoundingClientRect();
+    var vp=canvas.viewbox();
+    var mx=(ev.clientX-containerRect.left)/vp.scale+vp.x;
+    var my=(ev.clientY-containerRect.top)/vp.scale+vp.y;
+
+    var found=null;
+    er.forEach(function(el){
+      var t=el.type;
+      if(!t||(!t.includes('Task')&&!t.includes('Activity')&&!t.includes('CallActivity')&&!t.includes('SubProcess')))return;
+      if(mx>=el.x&&mx<=el.x+el.width&&my>=el.y&&my<=el.y+el.height)found=el;
+    });
+
+    if(!found){tooltip.style.display='none';lastElId=null;return;}
+    if(found.id===lastElId)return;
+    lastElId=found.id;
+
+    var bo=found.businessObject;
+    if(!bo){tooltip.style.display='none';return;}
+
+    var laneName='',poolName='',laneIdx=0;
     var parent=bo.$parent;
-    var laneIdx=0;
-
-    // Recorrer jerarquía para encontrar lane y pool
     while(parent){
       if(parent.$type&&parent.$type.indexOf('Lane')!==-1&&!laneName){
         laneName=parent.name||'Lane sin nombre';
-        // Calcular indice del lane para color
-        if(parent.$parent&&parent.$parent.flowElements){
-          var lanes=parent.$parent.flowElements.filter(function(f){return f.$type&&f.$type.indexOf('Lane')!==-1;});
-          laneIdx=lanes.indexOf(parent);
-          if(laneIdx<0)laneIdx=0;
-        } else if(parent.$parent&&parent.$parent.lanes){
-          laneIdx=parent.$parent.lanes.indexOf(parent);
-          if(laneIdx<0)laneIdx=0;
-        }
-        laneColor=laneColors[laneIdx%laneColors.length];
+        var siblings=[];
+        if(parent.$parent&&parent.$parent.lanes)siblings=parent.$parent.lanes;
+        else if(parent.$parent&&parent.$parent.flowElements)siblings=parent.$parent.flowElements.filter(function(f){return f.$type&&f.$type.indexOf('Lane')!==-1;});
+        laneIdx=Math.max(0,siblings.indexOf(parent));
       }
-      if(parent.$type&&(parent.$type.indexOf('Process')!==-1||parent.$type.indexOf('Collaboration')!==-1)&&!poolName){
-        // buscar participant que wrappea este proceso
-        var defs=bo.$parent;
+      if(parent.$type&&parent.$type.indexOf('Process')!==-1&&!poolName){
+        var defs=parent;
         while(defs&&defs.$type!=='bpmn:Definitions')defs=defs.$parent;
         if(defs&&defs.rootElements){
           defs.rootElements.forEach(function(r){
@@ -537,29 +550,15 @@ function initViewer(){
       parent=parent.$parent;
     }
 
-    if(!laneName)return;
-
+    if(!laneName){tooltip.style.display='none';return;}
     document.getElementById('ltt-pool').textContent=poolName||'Proceso';
     document.getElementById('ltt-lane').textContent=laneName;
-    document.getElementById('ltt-dot').style.background=laneColor;
+    document.getElementById('ltt-dot').style.background=laneColors[laneIdx%laneColors.length];
     tooltip.style.display='block';
   });
 
-  viewer.on('element.mouseleave',function(e){
-    var el=e.element;
-    if(el.type&&(el.type.includes('Task')||el.type.includes('Activity')||el.type.includes('CallActivity')||el.type.includes('SubProcess')))
-      tooltip.style.display='none';
-  });
-
-  // Seguir el mouse
-  document.getElementById('bpmn-container').addEventListener('mousemove',function(ev){
-    if(tooltip.style.display==='none')return;
-    var x=ev.clientX+14,y=ev.clientY-10;
-    var tw=tooltip.offsetWidth,th=tooltip.offsetHeight;
-    if(x+tw>window.innerWidth-10)x=ev.clientX-tw-10;
-    if(y+th>window.innerHeight-10)y=ev.clientY-th-10;
-    tooltip.style.left=x+'px';
-    tooltip.style.top=y+'px';
+  document.getElementById('bpmn-container').addEventListener('mouseleave',function(){
+    tooltip.style.display='none';lastElId=null;
   });
 }
 async function loadXml(xml){
