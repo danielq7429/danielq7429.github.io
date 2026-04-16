@@ -71,7 +71,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 #glossary-input{width:100%;padding:6px 12px 6px 30px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);color:var(--text);font-family:'Inter',sans-serif;font-size:12px;transition:all .15s;outline:none}
 #glossary-input:focus{border-color:var(--blue);background:var(--surface);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
 #glossary-input::placeholder{color:var(--text-faint)}
-.gsearch-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text-faint);font-size:11px;pointer-events:none}
+.gsearch-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;width:13px;height:13px;opacity:.45}
 #glossary-dd{display:none;position:absolute;top:calc(100% + 5px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:300;max-height:360px;overflow-y:auto}
 #glossary-dd.open{display:block}
 .gi{padding:10px 13px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
@@ -197,12 +197,11 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 .no-cu code{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--surface2);padding:2px 6px;border-radius:4px;color:var(--blue-text)}
 
 /* FOOTER */
-.footer-info{display:flex;align-items:center;gap:7px;margin-bottom:10px;padding:8px 11px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);cursor:pointer;transition:background .15s}
-.footer-info:hover{background:var(--surface3)}
-.footer-info-icon{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text-faint);flex-shrink:0;font-style:italic;font-family:Georgia,serif;font-weight:700}
-.footer-info-label{font-size:10px;color:var(--text-faint);flex:1}
-.footer-info-arrow{font-size:8px;color:var(--text-faint);transition:transform .2s}
-.footer-info-arrow.open{transform:rotate(180deg)}
+.footer-info{display:flex;align-items:center;justify-content:flex-end;margin-bottom:10px}
+.footer-info-icon{width:18px;height:18px;border-radius:50%;border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text-faint);flex-shrink:0;font-style:italic;font-family:Georgia,serif;font-weight:700;cursor:pointer;transition:all .15s}
+.footer-info-icon:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-bg)}
+.footer-info-label{display:none}
+.footer-info-arrow{display:none}
 .footer-tooltip{display:none;font-size:11px;color:var(--text-muted);line-height:1.6;padding:9px 11px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);margin-bottom:10px}
 .footer-tooltip.open{display:block}
 .footer-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px 16px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;border-radius:var(--radius);cursor:pointer;text-decoration:none;margin-bottom:8px;transition:all .15s;border:none;letter-spacing:-.1px}
@@ -245,6 +244,10 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 .glos-def{font-size:13px;color:var(--text-muted);line-height:1.75}
 .glos-cu{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--text-faint);display:flex;align-items:center;gap:6px}
 .glos-cu-code{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--blue-text);font-size:11px}
+#lane-tooltip{display:none;position:fixed;z-index:400;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:7px 11px;box-shadow:var(--shadow-md);pointer-events:none;max-width:240px}
+.ltt-pool{font-size:9px;font-weight:600;color:var(--text-faint);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px}
+.ltt-lane{font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:7px}
+.ltt-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);flex-shrink:0}
 </style>
 </head>
 <body>
@@ -273,7 +276,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
       </div>
     </div>
     <div id="glossary-wrap">
-      <span class="gsearch-icon">&#128269;</span>
+      <svg class="gsearch-icon" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="5.5" cy="5.5" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M9 9l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       <input id="glossary-input" type="text" placeholder="Buscar en el glosario...">
       <div id="glossary-dd"></div>
     </div>
@@ -361,6 +364,11 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 
 <div id="glos-modal">
   <div class="glos-box" id="glos-box"></div>
+</div>
+
+<div id="lane-tooltip">
+  <div class="ltt-pool" id="ltt-pool"></div>
+  <div class="ltt-lane"><span class="ltt-dot" id="ltt-dot"></span><span id="ltt-lane"></span></div>
 </div>
 
 <input type="file" id="bpmn-file-input" accept=".bpmn,.xml" style="display:none">
@@ -483,6 +491,76 @@ function initViewer(){
   if(viewer)viewer.destroy();
   viewer=new BpmnJS({container:'#bpmn-container',height:'100%'});
   viewer.on('element.click',function(e){var el=e.element;if(el.type&&(el.type.includes('Task')||el.type.includes('Activity')||el.type.includes('CallActivity')||el.type.includes('SubProcess')))handleClick(el);});
+
+  // Tooltip de lane al hacer hover
+  var tooltip=document.getElementById('lane-tooltip');
+  var laneColors=['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#f97316','#84cc16'];
+
+  viewer.on('element.hover',function(e){
+    var el=e.element;
+    if(!el.type||(!el.type.includes('Task')&&!el.type.includes('Activity')&&!el.type.includes('CallActivity')&&!el.type.includes('SubProcess')))return;
+    var bo=el.businessObject;
+    if(!bo)return;
+
+    // Buscar lane y pool padres
+    var laneName='',poolName='',laneColor=laneColors[0];
+    var parent=bo.$parent;
+    var laneIdx=0;
+
+    // Recorrer jerarquía para encontrar lane y pool
+    while(parent){
+      if(parent.$type&&parent.$type.indexOf('Lane')!==-1&&!laneName){
+        laneName=parent.name||'Lane sin nombre';
+        // Calcular indice del lane para color
+        if(parent.$parent&&parent.$parent.flowElements){
+          var lanes=parent.$parent.flowElements.filter(function(f){return f.$type&&f.$type.indexOf('Lane')!==-1;});
+          laneIdx=lanes.indexOf(parent);
+          if(laneIdx<0)laneIdx=0;
+        } else if(parent.$parent&&parent.$parent.lanes){
+          laneIdx=parent.$parent.lanes.indexOf(parent);
+          if(laneIdx<0)laneIdx=0;
+        }
+        laneColor=laneColors[laneIdx%laneColors.length];
+      }
+      if(parent.$type&&(parent.$type.indexOf('Process')!==-1||parent.$type.indexOf('Collaboration')!==-1)&&!poolName){
+        // buscar participant que wrappea este proceso
+        var defs=bo.$parent;
+        while(defs&&defs.$type!=='bpmn:Definitions')defs=defs.$parent;
+        if(defs&&defs.rootElements){
+          defs.rootElements.forEach(function(r){
+            if(r.$type==='bpmn:Collaboration'&&r.participants){
+              r.participants.forEach(function(p){if(p.processRef===parent&&p.name)poolName=p.name;});
+            }
+          });
+        }
+      }
+      parent=parent.$parent;
+    }
+
+    if(!laneName)return;
+
+    document.getElementById('ltt-pool').textContent=poolName||'Proceso';
+    document.getElementById('ltt-lane').textContent=laneName;
+    document.getElementById('ltt-dot').style.background=laneColor;
+    tooltip.style.display='block';
+  });
+
+  viewer.on('element.out',function(e){
+    var el=e.element;
+    if(el.type&&(el.type.includes('Task')||el.type.includes('Activity')||el.type.includes('CallActivity')||el.type.includes('SubProcess')))
+      tooltip.style.display='none';
+  });
+
+  // Seguir el mouse
+  document.getElementById('bpmn-container').addEventListener('mousemove',function(ev){
+    if(tooltip.style.display==='none')return;
+    var x=ev.clientX+14,y=ev.clientY-10;
+    var tw=tooltip.offsetWidth,th=tooltip.offsetHeight;
+    if(x+tw>window.innerWidth-10)x=ev.clientX-tw-10;
+    if(y+th>window.innerHeight-10)y=ev.clientY-th-10;
+    tooltip.style.left=x+'px';
+    tooltip.style.top=y+'px';
+  });
 }
 async function loadXml(xml){
   document.getElementById('empty-state').classList.add('hidden');
@@ -521,9 +599,13 @@ function tgl(uid){var b=document.getElementById(uid),c=document.getElementById('
 function tglAlt(uid){var b=document.getElementById(uid),c=document.getElementById('ac_'+uid);var o=b.classList.toggle('open');c.classList.toggle('open',o);}
 function tglInfo(uid){var t=document.getElementById(uid);t.classList.toggle('open');var row=document.getElementById('ia_'+uid);if(row)row.classList.toggle('open',t.classList.contains('open'));}
 
-function buildCheckList(text,splitChar){
+function buildCheckList(text,splitChar,dotColor){
   var items=text.split(splitChar||'.').map(function(s){return s.trim();}).filter(Boolean);
-  return'<ul class="check-list">'+items.map(function(p){return'<li class="check-item"><span class="check-icon">V</span><span class="check-txt">'+p+(splitChar?'':'.')+'</span></li>';}).join('')+'</ul>';
+  var dc=dotColor||'var(--green-dot)';
+  var bg=dotColor==='var(--red-dot)'?'var(--red-bg)':'var(--green-light)';
+  var tc=dotColor==='var(--red-dot)'?'var(--red-text)':'var(--green-text)';
+  var bc=dotColor==='var(--red-dot)'?'var(--red-dot)':'var(--green-dot)';
+  return'<ul class="check-list">'+items.map(function(p){return'<li class="check-item"><span class="check-icon" style="background:'+bg+';border-color:'+bc+';color:'+tc+'">V</span><span class="check-txt">'+p+(splitChar&&splitChar!=='|'?'':'.')+'</span></li>';}).join('')+'</ul>';
 }
 
 function buildAlt(text){
@@ -580,8 +662,8 @@ function handleClick(el){
       var postParts=cu.postcondicion_exito.split(/(?:Fracaso[^:]*:|Observacion[^:]*:)/i);
       var successTxt=postParts[0].replace(/^Exito[^:]*:\s*/i,'').trim();
       var failTxt=postParts[1]?postParts[1].trim():'';
-      var postHTML='<div style="margin-bottom:'+(failTxt?'10px':'0')+'">'+buildCheckList(successTxt,'|')+'</div>';
-      if(failTxt)postHTML+='<div style="padding:10px 12px;background:var(--red-bg);border-radius:var(--radius);border:1px solid rgba(239,68,68,.2)"><div style="font-size:9px;font-weight:700;color:var(--red-text);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Fracaso / Observacion</div><p style="font-size:12px;color:var(--red-text);line-height:1.55">'+failTxt+'</p></div>';
+      var postHTML=buildCheckList(successTxt,'|','var(--green-dot)');
+      if(failTxt)postHTML+=buildCheckList(failTxt,'.','var(--red-dot)');
       h+=mkStatic(IC.post,'Postcondicion',postHTML);
     }
     // FLUJO PRINCIPAL
