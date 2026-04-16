@@ -496,7 +496,7 @@ function initViewer(){
   var tooltip=document.getElementById('lane-tooltip');
   var laneColors=['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#f97316','#84cc16'];
 
-  viewer.on('element.hover',function(e){
+  viewer.on('element.mouseenter',function(e){
     var el=e.element;
     if(!el.type||(!el.type.includes('Task')&&!el.type.includes('Activity')&&!el.type.includes('CallActivity')&&!el.type.includes('SubProcess')))return;
     var bo=el.businessObject;
@@ -545,7 +545,7 @@ function initViewer(){
     tooltip.style.display='block';
   });
 
-  viewer.on('element.out',function(e){
+  viewer.on('element.mouseleave',function(e){
     var el=e.element;
     if(el.type&&(el.type.includes('Task')||el.type.includes('Activity')||el.type.includes('CallActivity')||el.type.includes('SubProcess')))
       tooltip.style.display='none';
