@@ -718,6 +718,9 @@ document.getElementById('cfg-file').addEventListener('change',function(e){var f=
 cd.addEventListener('dragover',function(e){e.preventDefault();cd.classList.add('over');});
 cd.addEventListener('dragleave',function(){cd.classList.remove('over');});
 cd.addEventListener('drop',function(e){e.preventDefault();cd.classList.remove('over');var f=e.dataTransfer.files[0];if(f){cd.textContent=f.name+' - cargado';readFile(f);}});
+document.getElementById('bpmn-container').addEventListener('mousemove',function(ev){
+  console.log('mousemove detectado',ev.clientX,ev.clientY);
+});
 loadStorage();initViewer();autoLoad();if(sheetUrl)reloadSheet();if(glossaryUrl)reloadGlossary();
 </script>
 </body>
